@@ -20,6 +20,10 @@ export function getServiceStatusCounts() {
   return request('/order/service/status-counts')
 }
 
+export function getPurchaseStatusCounts() {
+  return request('/order/purchase/status-counts')
+}
+
 export function getServiceOrders(params = {}) {
   const query = new URLSearchParams(params).toString()
   return request('/order/service' + (query ? '?' + query : ''))

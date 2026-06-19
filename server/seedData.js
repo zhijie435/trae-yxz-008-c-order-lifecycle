@@ -24,6 +24,27 @@ export const SERVICE_STATUS_FLOW = [
   SERVICE_STATUS.COMPLETED
 ]
 
+export const PURCHASE_STATUS = {
+  PENDING_SHIPMENT: 'pending_shipment',
+  PENDING_RECEIPT: 'pending_receipt',
+  TO_REVIEW: 'to_review',
+  COMPLETED: 'completed'
+}
+
+export const PURCHASE_STATUS_LABELS = {
+  [PURCHASE_STATUS.PENDING_SHIPMENT]: '待发货',
+  [PURCHASE_STATUS.PENDING_RECEIPT]: '待收货',
+  [PURCHASE_STATUS.TO_REVIEW]: '待评价',
+  [PURCHASE_STATUS.COMPLETED]: '已完成'
+}
+
+export const PURCHASE_STATUS_FLOW = [
+  PURCHASE_STATUS.PENDING_SHIPMENT,
+  PURCHASE_STATUS.PENDING_RECEIPT,
+  PURCHASE_STATUS.TO_REVIEW,
+  PURCHASE_STATUS.COMPLETED
+]
+
 const serviceOrders = [
   {
     orderId: 'SVC20240601001',
@@ -194,8 +215,21 @@ const purchaseOrders = [
     quantity: 1,
     unitPrice: 12999,
     totalPrice: 12999,
-    status: 'paid',
-    createTime: '2026-06-18T15:10:00.000Z'
+    status: PURCHASE_STATUS.PENDING_SHIPMENT,
+    createTime: '2026-06-19T15:10:00.000Z'
+  },
+  {
+    orderId: 'PUR20240601002',
+    type: 'purchase',
+    shopName: '数码旗舰店',
+    productTitle: 'Sony WH-1000XM5 降噪耳机',
+    productImage: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Sony%20WH-1000XM5%20headphones%20black%20on%20white%2C%20minimal%20product%20photo&image_size=square',
+    specText: '午夜黑 / 头戴式',
+    quantity: 1,
+    unitPrice: 2299,
+    totalPrice: 2299,
+    status: PURCHASE_STATUS.PENDING_SHIPMENT,
+    createTime: '2026-06-19T10:30:00.000Z'
   },
   {
     orderId: 'PUR20240602001',
@@ -207,11 +241,11 @@ const purchaseOrders = [
     quantity: 2,
     unitPrice: 1799,
     totalPrice: 3598,
-    status: 'shipped',
+    status: PURCHASE_STATUS.PENDING_RECEIPT,
     createTime: '2026-06-17T11:20:00.000Z'
   },
   {
-    orderId: 'PUR20240603001',
+    orderId: 'PUR20240602002',
     type: 'purchase',
     shopName: '家居生活馆',
     productTitle: '戴森 V15 无线吸尘器',
@@ -220,11 +254,11 @@ const purchaseOrders = [
     quantity: 1,
     unitPrice: 4490,
     totalPrice: 4490,
-    status: 'pending',
-    createTime: '2026-06-19T08:30:00.000Z'
+    status: PURCHASE_STATUS.PENDING_RECEIPT,
+    createTime: '2026-06-16T08:30:00.000Z'
   },
   {
-    orderId: 'PUR20240604001',
+    orderId: 'PUR20240603001',
     type: 'purchase',
     shopName: '运动户外专营',
     productTitle: 'Nike Air Max 270 运动鞋',
@@ -233,8 +267,47 @@ const purchaseOrders = [
     quantity: 1,
     unitPrice: 1099,
     totalPrice: 1099,
-    status: 'completed',
-    createTime: '2026-06-10T20:00:00.000Z'
+    status: PURCHASE_STATUS.TO_REVIEW,
+    createTime: '2026-06-14T20:00:00.000Z'
+  },
+  {
+    orderId: 'PUR20240603002',
+    type: 'purchase',
+    shopName: 'Apple 授权专营店',
+    productTitle: 'iPad Air 11英寸 M2芯片',
+    productImage: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=iPad%20Air%20M2%20on%20white%20surface%2C%20minimal%20product%20photo&image_size=square',
+    specText: '星光色 / 256GB WiFi',
+    quantity: 1,
+    unitPrice: 5999,
+    totalPrice: 5999,
+    status: PURCHASE_STATUS.TO_REVIEW,
+    createTime: '2026-06-13T16:45:00.000Z'
+  },
+  {
+    orderId: 'PUR20240604001',
+    type: 'purchase',
+    shopName: '家居生活馆',
+    productTitle: '飞利浦电动牙刷 HX9352',
+    productImage: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Philips%20electric%20toothbrush%20HX9352%20white%2C%20minimal%20product%20photo&image_size=square',
+    specText: '钻石亮白版 / 含2刷头',
+    quantity: 1,
+    unitPrice: 699,
+    totalPrice: 699,
+    status: PURCHASE_STATUS.COMPLETED,
+    createTime: '2026-06-10T12:00:00.000Z'
+  },
+  {
+    orderId: 'PUR20240604002',
+    type: 'purchase',
+    shopName: '运动户外专营',
+    productTitle: 'Lululemon Define 夹克',
+    productImage: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Lululemon%20Define%20jacket%20black%2C%20minimal%20product%20photo&image_size=square',
+    specText: '黑色 / M码',
+    quantity: 1,
+    unitPrice: 1150,
+    totalPrice: 1150,
+    status: PURCHASE_STATUS.COMPLETED,
+    createTime: '2026-06-08T09:30:00.000Z'
   }
 ]
 
@@ -243,7 +316,7 @@ export function getServiceOrderCount() {
 }
 
 export function getPurchaseOrderCount() {
-  return purchaseOrders.filter(o => o.status !== 'cancelled').length
+  return purchaseOrders.length
 }
 
 export function getServiceStatusCounts() {
@@ -257,11 +330,23 @@ export function getServiceStatusCounts() {
   return counts
 }
 
+export function getPurchaseStatusCounts() {
+  const counts = {}
+  Object.values(PURCHASE_STATUS).forEach(s => { counts[s] = 0 })
+  purchaseOrders.forEach(o => {
+    if (counts[o.status] !== undefined) {
+      counts[o.status]++
+    }
+  })
+  return counts
+}
+
 export function getServiceOrderList(status) {
   if (!status || status === 'all') return serviceOrders
   return serviceOrders.filter(o => o.status === status)
 }
 
-export function getPurchaseOrderList() {
-  return purchaseOrders
+export function getPurchaseOrderList(status) {
+  if (!status || status === 'all') return purchaseOrders
+  return purchaseOrders.filter(o => o.status === status)
 }

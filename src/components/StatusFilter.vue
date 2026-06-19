@@ -2,7 +2,7 @@
   <div class="status-filter">
     <div class="status-scroll" ref="scrollRef">
       <div
-        v-for="item in statusList"
+        v-for="item in tabsWithCounts"
         :key="item.value"
         class="status-tab"
         :class="{ 'status-tab--active': modelValue === item.value }"
@@ -17,22 +17,17 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick, watch } from 'vue'
-
-const SERVICE_STATUS_LIST = [
-  { value: 'all', label: '全部' },
-  { value: 'pending', label: '待付款' },
-  { value: 'pending_service', label: '待服务' },
-  { value: 'in_progress', label: '进行中' },
-  { value: 'to_review', label: '评价' },
-  { value: 'completed', label: '已完成' },
-  { value: 'cancelled', label: '已取消' }
-]
+import { ref, computed, onMounted, nextTick, watch } from 'vue'
 
 const props = defineProps({
   modelValue: {
     type: String,
     default: 'all'
+  },
+  tabs: {
+    type: Array,
+    default: () => [],
+    validator: (v) => v.every(t => t.value && t.label)
   },
   statusCounts: {
     type: Object,
@@ -49,22 +44,12 @@ const setTabRef = (value, el) => {
   if (el) tabRefs[value] = el
 }
 
-const statusList = ref(
-  SERVICE_STATUS_LIST.map(item => ({
+const tabsWithCounts = computed(() => {
+  return props.tabs.map(item => ({
     ...item,
-    count: 0
+    count: item.value === 'all' ? 0 : (props.statusCounts[item.value] || 0)
   }))
-)
-
-const updateCounts = () => {
-  statusList.value.forEach(item => {
-    if (item.value === 'all') {
-      item.count = 0
-    } else {
-      item.count = props.statusCounts[item.value] || 0
-    }
-  })
-}
+})
 
 const scrollToActive = async () => {
   await nextTick()
@@ -84,8 +69,6 @@ const handleClick = (value) => {
   emit('update:modelValue', value)
   emit('status-change', value)
 }
-
-watch(() => props.statusCounts, updateCounts, { deep: true, immediate: true })
 
 watch(() => props.modelValue, () => {
   scrollToActive()
