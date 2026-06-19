@@ -30,7 +30,7 @@
     />
 
     <StatusFilter
-      v-if="activeTab === 'service'"
+      v-if="activeTab === ORDER_TYPE.SERVICE"
       key="service-filter"
       v-model="activeServiceStatus"
       :tabs="serviceTabs"
@@ -39,7 +39,7 @@
     />
 
     <StatusFilter
-      v-if="activeTab === 'purchase'"
+      v-if="activeTab === ORDER_TYPE.PURCHASE"
       key="purchase-filter"
       v-model="activePurchaseStatus"
       :tabs="purchaseTabs"
@@ -48,7 +48,7 @@
     />
 
     <StatusFilter
-      v-if="activeTab === 'rental'"
+      v-if="activeTab === ORDER_TYPE.RENTAL"
       key="rental-filter"
       v-model="activeRentalStatus"
       :tabs="rentalTabs"
@@ -88,7 +88,7 @@
               <p class="order-spec">{{ order.specText }}</p>
             </div>
             <div class="order-price-col">
-              <template v-if="order.type === 'rental'">
+              <template v-if="order.type === ORDER_TYPE.RENTAL">
                 <p class="order-price">¥{{ order.unitPrice?.toFixed(2) || '0.00' }}<span class="price-unit">/天</span></p>
                 <p class="price-sub">月付 ¥{{ order.rentalInfo?.monthlyRent?.toFixed(2) || order.totalPrice?.toFixed(2) || '0.00' }}</p>
               </template>
@@ -101,122 +101,13 @@
           <div class="order-card-footer">
             <span class="order-time">{{ formatTime(order.createTime) }}</span>
             <div class="order-actions">
-              <template v-if="activeTab === 'service'">
-                <button
-                  v-if="order.status === 'pending'"
-                  class="action-btn action-btn--primary"
-                  @click.stop="onPayOrder(order)"
-                >立即支付</button>
-                <button
-                  v-if="order.status === 'pending'"
-                  class="action-btn action-btn--outline"
-                  @click.stop="onCancelOrder(order)"
-                >取消订单</button>
-                <button
-                  v-if="order.status === 'pending_service'"
-                  class="action-btn action-btn--outline"
-                  @click.stop="onViewDetail(order)"
-                >查看详情</button>
-                <button
-                  v-if="order.status === 'in_progress'"
-                  class="action-btn action-btn--outline"
-                  @click.stop="onViewDetail(order)"
-                >服务进度</button>
-                <button
-                  v-if="order.status === 'to_review'"
-                  class="action-btn action-btn--primary"
-                  @click.stop="onReviewOrder(order)"
-                >去评价</button>
-                <button
-                  v-if="order.status === 'completed'"
-                  class="action-btn action-btn--outline"
-                  @click.stop="onViewDetail(order)"
-                >查看详情</button>
-                <button
-                  v-if="order.status === 'cancelled'"
-                  class="action-btn action-btn--outline"
-                  @click.stop="onRebookOrder(order)"
-                >重新下单</button>
-              </template>
-              <template v-if="activeTab === 'purchase'">
-                <button
-                  v-if="order.status === 'pending_shipment'"
-                  class="action-btn action-btn--outline"
-                  @click.stop="onViewDetail(order)"
-                >查看详情</button>
-                <button
-                  v-if="order.status === 'pending_receipt'"
-                  class="action-btn action-btn--primary"
-                  @click.stop="onConfirmReceive(order)"
-                >确认收货</button>
-                <button
-                  v-if="order.status === 'pending_receipt'"
-                  class="action-btn action-btn--outline"
-                  @click.stop="onViewLogistics(order)"
-                >查看物流</button>
-                <button
-                  v-if="order.status === 'to_review'"
-                  class="action-btn action-btn--primary"
-                  @click.stop="onReviewOrder(order)"
-                >去评价</button>
-                <button
-                  v-if="order.status === 'completed'"
-                  class="action-btn action-btn--outline"
-                  @click.stop="onViewDetail(order)"
-                >查看详情</button>
-                <button
-                  v-if="order.status === 'completed'"
-                  class="action-btn action-btn--outline"
-                  @click.stop="onRebookOrder(order)"
-                >再次购买</button>
-              </template>
-              <template v-if="activeTab === 'rental'">
-                <button
-                  v-if="order.status === 'pending_shipment'"
-                  class="action-btn action-btn--outline"
-                  @click.stop="onViewDetail(order)"
-                >查看详情</button>
-                <button
-                  v-if="order.status === 'pending_receipt'"
-                  class="action-btn action-btn--primary"
-                  @click.stop="onConfirmReceive(order)"
-                >确认收货</button>
-                <button
-                  v-if="order.status === 'pending_receipt'"
-                  class="action-btn action-btn--outline"
-                  @click.stop="onViewLogistics(order)"
-                >查看物流</button>
-                <button
-                  v-if="order.status === 'renting'"
-                  class="action-btn action-btn--primary"
-                  @click.stop="onViewDetail(order)"
-                >申请续租</button>
-                <button
-                  v-if="order.status === 'renting'"
-                  class="action-btn action-btn--outline"
-                  @click.stop="onViewDetail(order)"
-                >申请退租</button>
-                <button
-                  v-if="order.status === 'to_review'"
-                  class="action-btn action-btn--primary"
-                  @click.stop="onReviewOrder(order)"
-                >去评价</button>
-                <button
-                  v-if="order.status === 'completed'"
-                  class="action-btn action-btn--outline"
-                  @click.stop="onViewDetail(order)"
-                >查看详情</button>
-                <button
-                  v-if="order.status === 'completed'"
-                  class="action-btn action-btn--primary"
-                  @click.stop="onRebookOrder(order)"
-                >再次租赁</button>
-                <button
-                  v-if="order.status === 'renew_applied' || order.status === 'return_applied'"
-                  class="action-btn action-btn--outline"
-                  @click.stop="onViewDetail(order)"
-                >查看详情</button>
-              </template>
+              <button
+                v-for="action in getOrderActions(order)"
+                :key="action.type"
+                class="action-btn"
+                :class="'action-btn--' + action.style"
+                @click.stop="handleListAction(action.type, order)"
+              >{{ action.label }}</button>
             </div>
           </div>
         </div>
@@ -258,78 +149,16 @@ import {
   updateOrderStatus,
   applyReRent
 } from './api'
-
-const SERVICE_TABS = [
-  { value: 'all', label: '全部' },
-  { value: 'pending', label: '待付款' },
-  { value: 'pending_service', label: '待服务' },
-  { value: 'in_progress', label: '进行中' },
-  { value: 'to_review', label: '评价' },
-  { value: 'completed', label: '已完成' },
-  { value: 'cancelled', label: '已取消' }
-]
-
-const PURCHASE_TABS = [
-  { value: 'all', label: '全部' },
-  { value: 'pending_shipment', label: '待发货' },
-  { value: 'pending_receipt', label: '待收货' },
-  { value: 'to_review', label: '待评价' },
-  { value: 'completed', label: '已完成' }
-]
-
-const RENTAL_TABS = [
-  { value: 'all', label: '全部' },
-  { value: 'pending_shipment', label: '待发货' },
-  { value: 'pending_receipt', label: '待收货' },
-  { value: 'renting', label: '租赁中' },
-  { value: 'renew_applied', label: '续租中' },
-  { value: 'return_applied', label: '退租中' },
-  { value: 'to_review', label: '待评价' },
-  { value: 'completed', label: '已完成' }
-]
-
-const STATUS_TEXT = {
-  pending: '待付款',
-  pending_service: '待服务',
-  in_progress: '进行中',
-  pending_shipment: '待发货',
-  pending_receipt: '待收货',
-  renting: '租赁中',
-  renew_applied: '续租审核中',
-  return_applied: '退租审核中',
-  to_review: '待评价',
-  completed: '已完成',
-  cancelled: '已取消'
-}
-
-const SERVICE_EMPTY_TEXT = {
-  all: '暂无服务订单',
-  pending: '暂无待付款订单',
-  pending_service: '暂无待服务订单',
-  in_progress: '暂无进行中的订单',
-  to_review: '暂无待评价订单',
-  completed: '暂无已完成订单',
-  cancelled: '暂无已取消订单'
-}
-
-const PURCHASE_EMPTY_TEXT = {
-  all: '暂无购买订单',
-  pending_shipment: '暂无待发货订单',
-  pending_receipt: '暂无待收货订单',
-  to_review: '暂无待评价订单',
-  completed: '暂无已完成订单'
-}
-
-const RENTAL_EMPTY_TEXT = {
-  all: '暂无租赁订单',
-  pending_shipment: '暂无待发货订单',
-  pending_receipt: '暂无待收货订单',
-  renting: '暂无租赁中订单',
-  renew_applied: '暂无续租审核中订单',
-  return_applied: '暂无退租审核中订单',
-  to_review: '暂无待评价订单',
-  completed: '暂无已完成订单'
-}
+import {
+  ORDER_TYPE,
+  getStatusFilterTabs,
+  getStatusLabel,
+  getEmptyText,
+  getListActions,
+  ACTION_TYPE,
+  getPayNextStatus,
+  getConfirmReceiveNextStatus
+} from './constants/orderConfig'
 
 const currentPage = ref('list')
 const selectedOrderId = ref('')
@@ -340,7 +169,7 @@ const showCsPanel = ref(false)
 const csOrder = ref(null)
 const csDefaultType = ref('after')
 
-const activeTab = ref('service')
+const activeTab = ref(ORDER_TYPE.SERVICE)
 const activeServiceStatus = ref('all')
 const activePurchaseStatus = ref('all')
 const activeRentalStatus = ref('all')
@@ -355,29 +184,27 @@ const serviceOrders = ref([])
 const purchaseOrders = ref([])
 const rentalOrders = ref([])
 
-const serviceTabs = SERVICE_TABS
-const purchaseTabs = PURCHASE_TABS
-const rentalTabs = RENTAL_TABS
+const serviceTabs = getStatusFilterTabs(ORDER_TYPE.SERVICE)
+const purchaseTabs = getStatusFilterTabs(ORDER_TYPE.PURCHASE)
+const rentalTabs = getStatusFilterTabs(ORDER_TYPE.RENTAL)
 
 const currentOrders = computed(() => {
-  if (activeTab.value === 'service') return serviceOrders.value
-  if (activeTab.value === 'purchase') return purchaseOrders.value
+  if (activeTab.value === ORDER_TYPE.SERVICE) return serviceOrders.value
+  if (activeTab.value === ORDER_TYPE.PURCHASE) return purchaseOrders.value
   return rentalOrders.value
 })
 
-const emptyText = computed(() => {
-  if (activeTab.value === 'purchase') {
-    return PURCHASE_EMPTY_TEXT[activePurchaseStatus.value] || '暂无购买订单'
-  }
-  if (activeTab.value === 'rental') {
-    return RENTAL_EMPTY_TEXT[activeRentalStatus.value] || '暂无租赁订单'
-  }
-  return SERVICE_EMPTY_TEXT[activeServiceStatus.value] || '暂无服务订单'
+const activeStatus = computed(() => {
+  if (activeTab.value === ORDER_TYPE.SERVICE) return activeServiceStatus.value
+  if (activeTab.value === ORDER_TYPE.PURCHASE) return activePurchaseStatus.value
+  return activeRentalStatus.value
 })
 
-const statusText = (status) => {
-  return STATUS_TEXT[status] || `未知(${status})`
-}
+const emptyText = computed(() => getEmptyText(activeTab.value, activeStatus.value))
+
+const statusText = (status) => getStatusLabel(status)
+
+const getOrderActions = (order) => getListActions(order.type, order.status)
 
 const formatTime = (isoStr) => {
   const d = new Date(isoStr)
@@ -426,14 +253,14 @@ const fetchRentalStatusCounts = async () => {
 const fetchOrders = async () => {
   loading.value = true
   try {
-    if (activeTab.value === 'service') {
+    if (activeTab.value === ORDER_TYPE.SERVICE) {
       const params = {}
       if (activeServiceStatus.value !== 'all') {
         params.status = activeServiceStatus.value
       }
       const data = await getServiceOrders(params)
       serviceOrders.value = data.list
-    } else if (activeTab.value === 'purchase') {
+    } else if (activeTab.value === ORDER_TYPE.PURCHASE) {
       const params = {}
       if (activePurchaseStatus.value !== 'all') {
         params.status = activePurchaseStatus.value
@@ -456,10 +283,10 @@ const fetchOrders = async () => {
 }
 
 const onTabChange = () => {
-  if (activeTab.value === 'service') {
+  if (activeTab.value === ORDER_TYPE.SERVICE) {
     activeServiceStatus.value = 'all'
     fetchServiceStatusCounts()
-  } else if (activeTab.value === 'purchase') {
+  } else if (activeTab.value === ORDER_TYPE.PURCHASE) {
     activePurchaseStatus.value = 'all'
     fetchPurchaseStatusCounts()
   } else {
@@ -505,9 +332,9 @@ const onOrderClick = (order) => {
   goToDetail(order)
 }
 
-const onPayOrder = async (order) => {
+const handlePayOrder = async (order) => {
   try {
-    const nextStatus = order.type === 'service' ? 'pending_service' : 'pending_shipment'
+    const nextStatus = getPayNextStatus(order.type)
     await updateOrderStatus(order.orderId, nextStatus)
     showToastMessage('支付成功')
     await onOrderUpdated()
@@ -516,7 +343,7 @@ const onPayOrder = async (order) => {
   }
 }
 
-const onCancelOrder = async (order) => {
+const handleCancelOrder = async (order) => {
   try {
     await updateOrderStatus(order.orderId, 'cancelled')
     showToastMessage('订单已取消')
@@ -526,11 +353,7 @@ const onCancelOrder = async (order) => {
   }
 }
 
-const onViewDetail = (order) => {
-  goToDetail(order)
-}
-
-const onReviewOrder = async (order) => {
+const handleReviewOrder = async (order) => {
   try {
     await updateOrderStatus(order.orderId, 'completed')
     showToastMessage('评价成功')
@@ -540,8 +363,8 @@ const onReviewOrder = async (order) => {
   }
 }
 
-const onRebookOrder = async (order) => {
-  if (order.type === 'rental') {
+const handleRebookOrder = async (order) => {
+  if (order.type === ORDER_TYPE.RENTAL) {
     try {
       const data = await applyReRent(order.orderId)
       showToastMessage(`已为您添加「${data?.productTitle || '商品'}」到租赁购物车`)
@@ -553,9 +376,9 @@ const onRebookOrder = async (order) => {
   }
 }
 
-const onConfirmReceive = async (order) => {
+const handleConfirmReceive = async (order) => {
   try {
-    const nextStatus = order.type === 'rental' ? 'renting' : 'to_review'
+    const nextStatus = getConfirmReceiveNextStatus(order.type)
     await updateOrderStatus(order.orderId, nextStatus)
     showToastMessage('确认收货成功')
     await onOrderUpdated()
@@ -564,8 +387,31 @@ const onConfirmReceive = async (order) => {
   }
 }
 
-const onViewLogistics = (order) => {
-  goToDetail(order)
+const handleListAction = async (actionType, order) => {
+  switch (actionType) {
+    case ACTION_TYPE.PAY:
+      await handlePayOrder(order)
+      break
+    case ACTION_TYPE.CANCEL:
+      await handleCancelOrder(order)
+      break
+    case ACTION_TYPE.VIEW_DETAIL:
+    case ACTION_TYPE.VIEW_LOGISTICS:
+    case ACTION_TYPE.APPLY_RENEW:
+    case ACTION_TYPE.APPLY_RETURN:
+      goToDetail(order)
+      break
+    case ACTION_TYPE.CONFIRM_RECEIVE:
+      await handleConfirmReceive(order)
+      break
+    case ACTION_TYPE.REVIEW:
+      await handleReviewOrder(order)
+      break
+    case ACTION_TYPE.REBOOK:
+    case ACTION_TYPE.RE_RENT:
+      await handleRebookOrder(order)
+      break
+  }
 }
 
 const openCsPanel = (order) => {
@@ -573,7 +419,7 @@ const openCsPanel = (order) => {
   if (order) {
     csDefaultType.value = order.status === 'pending' ? 'pre' : 'after'
   } else {
-    csDefaultType.value = activeTab.value === 'service' ? 'after' : 'after'
+    csDefaultType.value = activeTab.value === ORDER_TYPE.SERVICE ? 'after' : 'after'
   }
   showCsPanel.value = true
 }

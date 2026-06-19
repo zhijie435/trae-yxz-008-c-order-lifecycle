@@ -101,7 +101,7 @@
             <p class="product-qty">x{{ order.quantity }}</p>
           </div>
           <div class="product-price">
-            <template v-if="order.type === 'rental'">
+            <template v-if="order.type === ORDER_TYPE.RENTAL">
               <p class="price-text">¥{{ order.unitPrice.toFixed(2) }}<span class="price-unit">/天</span></p>
               <p class="price-sub">月付 ¥{{ order.rentalInfo?.monthlyRent?.toFixed(2) || order.totalPrice.toFixed(2) }}</p>
             </template>
@@ -126,7 +126,7 @@
         </div>
       </div>
 
-      <div v-if="order.type === 'service' && order.serviceInfo" class="info-section">
+      <div v-if="order.type === ORDER_TYPE.SERVICE && order.serviceInfo" class="info-section">
         <h3 class="section-title">服务信息</h3>
         <div class="info-card">
           <div class="info-row">
@@ -144,7 +144,7 @@
         </div>
       </div>
 
-      <div v-if="order.type === 'purchase' && order.logistics && order.logistics.trackingNo" class="info-section">
+      <div v-if="order.type === ORDER_TYPE.PURCHASE && order.logistics && order.logistics.trackingNo" class="info-section">
         <h3 class="section-title">物流信息</h3>
         <div class="info-card">
           <div class="info-row">
@@ -175,7 +175,7 @@
         </div>
       </div>
 
-      <div v-if="order.type === 'rental' && order.logistics && order.logistics.trackingNo && order.status !== 'renting' && order.status !== 'to_review' && order.status !== 'completed'" class="info-section">
+      <div v-if="order.type === ORDER_TYPE.RENTAL && order.logistics && order.logistics.trackingNo && order.status !== RENTAL_STATUS.RENTING && order.status !== RENTAL_STATUS.TO_REVIEW && order.status !== RENTAL_STATUS.COMPLETED" class="info-section">
         <h3 class="section-title">物流信息</h3>
         <div class="info-card">
           <div class="info-row">
@@ -196,9 +196,9 @@
         </div>
       </div>
 
-      <div v-if="order.type === 'rental' && order.rentalInfo" class="info-section">
+      <div v-if="order.type === ORDER_TYPE.RENTAL && order.rentalInfo" class="info-section">
         <h3 class="section-title">租赁信息</h3>
-        <div v-if="order.status === 'renting'" class="countdown-card">
+        <div v-if="order.status === RENTAL_STATUS.RENTING" class="countdown-card">
           <div class="countdown-header">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="12" cy="12" r="10"></circle>
@@ -269,7 +269,7 @@
         </div>
       </div>
 
-      <div v-if="order.type !== 'rental'" class="info-section">
+      <div v-if="order.type !== ORDER_TYPE.RENTAL" class="info-section">
         <h3 class="section-title">支付信息</h3>
         <div class="info-card">
           <div class="info-row">
@@ -295,7 +295,7 @@
         </div>
       </div>
 
-      <div v-if="order.type === 'rental'" class="info-section">
+      <div v-if="order.type === ORDER_TYPE.RENTAL" class="info-section">
         <h3 class="section-title">支付信息</h3>
         <div class="info-card">
           <div class="info-row">
@@ -344,137 +344,13 @@
     </div>
 
     <div v-if="order" class="action-bar">
-      <template v-if="order.type === 'service'">
-        <button
-          v-if="order.status === 'pending'"
-          class="action-btn action-btn--outline"
-          @click="handleCancelOrder"
-        >取消订单</button>
-        <button
-          v-if="order.status === 'pending'"
-          class="action-btn action-btn--primary"
-          @click="handlePayOrder"
-        >立即支付</button>
-        <button
-          v-if="order.status === 'pending_service'"
-          class="action-btn action-btn--outline"
-          @click="handleContactService"
-        >联系客服</button>
-        <button
-          v-if="order.status === 'in_progress'"
-          class="action-btn action-btn--outline"
-          @click="handleContactServicePerson"
-        >联系服务人员</button>
-        <button
-          v-if="order.status === 'to_review'"
-          class="action-btn action-btn--primary"
-          @click="handleReviewOrder"
-        >去评价</button>
-        <button
-          v-if="order.status === 'completed'"
-          class="action-btn action-btn--outline"
-          @click="handleRebookOrder"
-        >重新下单</button>
-        <button
-          v-if="order.status === 'cancelled'"
-          class="action-btn action-btn--primary"
-          @click="handleRebookOrder"
-        >重新下单</button>
-      </template>
-      <template v-else-if="order.type === 'purchase'">
-        <button
-          v-if="order.status === 'pending_shipment'"
-          class="action-btn action-btn--outline"
-          @click="handleContactService"
-        >联系卖家</button>
-        <button
-          v-if="order.status === 'pending_receipt'"
-          class="action-btn action-btn--outline"
-          @click="handleViewLogistics"
-        >查看物流</button>
-        <button
-          v-if="order.status === 'pending_receipt'"
-          class="action-btn action-btn--primary"
-          @click="handleConfirmReceive"
-        >确认收货</button>
-        <button
-          v-if="order.status === 'to_review'"
-          class="action-btn action-btn--primary"
-          @click="handleReviewOrder"
-        >去评价</button>
-        <button
-          v-if="order.status === 'completed'"
-          class="action-btn action-btn--outline"
-          @click="handleContactService"
-        >联系客服</button>
-        <button
-          v-if="order.status === 'completed'"
-          class="action-btn action-btn--primary"
-          @click="handleRebookOrder"
-        >再次购买</button>
-      </template>
-      <template v-else-if="order.type === 'rental'">
-        <button
-          v-if="order.status === 'pending'"
-          class="action-btn action-btn--outline"
-          @click="handleCancelOrder"
-        >取消订单</button>
-        <button
-          v-if="order.status === 'pending'"
-          class="action-btn action-btn--primary"
-          @click="handlePayOrder"
-        >立即支付</button>
-        <button
-          v-if="order.status === 'pending_shipment'"
-          class="action-btn action-btn--outline"
-          @click="handleContactService"
-        >联系商家</button>
-        <button
-          v-if="order.status === 'pending_receipt'"
-          class="action-btn action-btn--outline"
-          @click="handleViewLogistics"
-        >查看物流</button>
-        <button
-          v-if="order.status === 'pending_receipt'"
-          class="action-btn action-btn--primary"
-          @click="handleConfirmReceive"
-        >确认收货</button>
-        <button
-          v-if="order.status === 'renting'"
-          class="action-btn action-btn--outline"
-          @click="handleApplyReturn"
-        >申请退租</button>
-        <button
-          v-if="order.status === 'renting'"
-          class="action-btn action-btn--primary"
-          @click="handleApplyRenew"
-        >申请续租</button>
-        <button
-          v-if="order.status === 'renew_applied' || order.status === 'return_applied'"
-          class="action-btn action-btn--outline"
-          @click="handleContactService"
-        >联系客服</button>
-        <button
-          v-if="order.status === 'to_review'"
-          class="action-btn action-btn--primary"
-          @click="handleReviewOrder"
-        >去评价</button>
-        <button
-          v-if="order.status === 'completed'"
-          class="action-btn action-btn--outline"
-          @click="handleContactService"
-        >联系客服</button>
-        <button
-          v-if="order.status === 'completed'"
-          class="action-btn action-btn--primary"
-          @click="handleReRent"
-        >再次租赁</button>
-        <button
-          v-if="order.status === 'cancelled'"
-          class="action-btn action-btn--primary"
-          @click="handleReRent"
-        >再次租赁</button>
-      </template>
+      <button
+        v-for="action in detailActions"
+        :key="action.type"
+        class="action-btn"
+        :class="'action-btn--' + action.style"
+        @click="handleDetailAction(action.type)"
+      >{{ action.label }}</button>
     </div>
 
     <div v-if="showToast" class="toast">{{ toastMessage }}</div>
@@ -499,6 +375,16 @@ import {
   applyReRent
 } from '../api'
 import CsServicePanel from './CsServicePanel.vue'
+import {
+  ORDER_TYPE,
+  RENTAL_STATUS,
+  getStatusDesc,
+  getDetailActions,
+  ACTION_TYPE,
+  getPayNextStatus,
+  getConfirmReceiveNextStatus,
+  isValidOrderType
+} from '../constants/orderConfig'
 
 const props = defineProps({
   orderId: {
@@ -508,7 +394,7 @@ const props = defineProps({
   orderType: {
     type: String,
     required: true,
-    validator: (v) => ['service', 'purchase', 'rental'].includes(v)
+    validator: (v) => isValidOrderType(v)
   }
 })
 
@@ -525,36 +411,14 @@ let countdownTimer = null
 let endTimeMs = null
 let visibilityHandler = null
 
-const STATUS_TEXT = {
-  pending: '待付款',
-  pending_service: '待服务',
-  in_progress: '进行中',
-  pending_shipment: '待发货',
-  pending_receipt: '待收货',
-  renting: '租赁中',
-  renew_applied: '续租审核中',
-  return_applied: '退租审核中',
-  to_review: '待评价',
-  completed: '已完成',
-  cancelled: '已取消'
-}
-
 const currentStatusDesc = computed(() => {
   if (!order.value) return ''
-  const descMap = {
-    pending: '请在30分钟内完成支付',
-    pending_service: '服务人员将尽快与您联系',
-    in_progress: '服务进行中，请保持电话畅通',
-    pending_shipment: '商家正在备货，请耐心等待',
-    pending_receipt: '商品已发出，请注意查收',
-    renting: '租赁进行中，享受您的租赁时光',
-    renew_applied: '续租申请已提交，等待审核',
-    return_applied: '退租申请已提交，等待审核',
-    to_review: '租期已结束，快去评价吧',
-    completed: '感谢您的支持，欢迎再次租赁',
-    cancelled: '订单已取消'
-  }
-  return descMap[order.value.status] || ''
+  return getStatusDesc(order.value.status)
+})
+
+const detailActions = computed(() => {
+  if (!order.value) return []
+  return getDetailActions(order.value.type, order.value.status)
 })
 
 const formatTime = (isoStr) => {
@@ -581,7 +445,7 @@ const copyToClipboard = (text) => {
 
 const startCountdown = () => {
   stopCountdown()
-  if (!order.value || !order.value.rentalInfo?.endDate || order.value.status !== 'renting') return
+  if (!order.value || !order.value.rentalInfo?.endDate || order.value.status !== RENTAL_STATUS.RENTING) return
 
   endTimeMs = new Date(order.value.rentalInfo.endDate + ' 23:59:59').getTime()
 
@@ -628,11 +492,11 @@ const stopCountdown = () => {
 
 watch(
   () => (order.value ? { status: order.value.status, endDate: order.value.rentalInfo?.endDate } : null),
-  (watchVal) => {
+  () => {
     if (
       order.value &&
-      order.value.type === 'rental' &&
-      order.value.status === 'renting' &&
+      order.value.type === ORDER_TYPE.RENTAL &&
+      order.value.status === RENTAL_STATUS.RENTING &&
       order.value.rentalInfo?.endDate
     ) {
       startCountdown()
@@ -659,9 +523,9 @@ const fetchDetail = async () => {
   error.value = ''
   try {
     let data
-    if (props.orderType === 'service') {
+    if (props.orderType === ORDER_TYPE.SERVICE) {
       data = await getServiceOrderDetail(props.orderId)
-    } else if (props.orderType === 'rental') {
+    } else if (props.orderType === ORDER_TYPE.RENTAL) {
       data = await getRentalOrderDetail(props.orderId)
     } else {
       data = await getPurchaseOrderDetail(props.orderId)
@@ -676,12 +540,7 @@ const fetchDetail = async () => {
 
 const handlePayOrder = async () => {
   try {
-    let nextStatus = 'pending_shipment'
-    if (props.orderType === 'service') {
-      nextStatus = 'pending_service'
-    } else if (props.orderType === 'rental') {
-      nextStatus = 'pending_shipment'
-    }
+    const nextStatus = getPayNextStatus(props.orderType)
     await updateOrderStatus(props.orderId, nextStatus)
     showToastMessage('支付成功')
     emit('order-updated')
@@ -704,7 +563,7 @@ const handleCancelOrder = async () => {
 
 const handleConfirmReceive = async () => {
   try {
-    const nextStatus = props.orderType === 'rental' ? 'renting' : 'to_review'
+    const nextStatus = getConfirmReceiveNextStatus(props.orderType)
     await updateOrderStatus(props.orderId, nextStatus)
     showToastMessage('确认收货成功')
     emit('order-updated')
@@ -730,10 +589,6 @@ const handleRebookOrder = () => {
 }
 
 const handleContactService = () => {
-  showCsPanel.value = true
-}
-
-const handleContactServicePerson = () => {
   showCsPanel.value = true
 }
 
@@ -769,6 +624,42 @@ const handleReRent = async () => {
     showToastMessage(`已为您添加「${data?.productTitle || '商品'}」到租赁购物车`)
   } catch (e) {
     showToastMessage('操作成功，已加入租赁购物车')
+  }
+}
+
+const handleDetailAction = async (actionType) => {
+  switch (actionType) {
+    case ACTION_TYPE.PAY:
+      await handlePayOrder()
+      break
+    case ACTION_TYPE.CANCEL:
+      await handleCancelOrder()
+      break
+    case ACTION_TYPE.CONFIRM_RECEIVE:
+      await handleConfirmReceive()
+      break
+    case ACTION_TYPE.REVIEW:
+      await handleReviewOrder()
+      break
+    case ACTION_TYPE.REBOOK:
+      handleRebookOrder()
+      break
+    case ACTION_TYPE.CONTACT_SERVICE:
+    case ACTION_TYPE.CONTACT_SERVICE_PERSON:
+      handleContactService()
+      break
+    case ACTION_TYPE.VIEW_LOGISTICS:
+      handleViewLogistics()
+      break
+    case ACTION_TYPE.APPLY_RENEW:
+      await handleApplyRenew()
+      break
+    case ACTION_TYPE.APPLY_RETURN:
+      await handleApplyReturn()
+      break
+    case ACTION_TYPE.RE_RENT:
+      await handleReRent()
+      break
   }
 }
 
