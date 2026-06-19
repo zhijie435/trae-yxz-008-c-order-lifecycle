@@ -16,6 +16,10 @@ export function getOrderSummary() {
   return request('/order/summary')
 }
 
+export function getServiceStatusCounts() {
+  return request('/order/service/status-counts')
+}
+
 export function getServiceOrders(params = {}) {
   const query = new URLSearchParams(params).toString()
   return request('/order/service' + (query ? '?' + query : ''))

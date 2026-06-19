@@ -19,6 +19,13 @@
       @tab-change="onTabChange"
     />
 
+    <ServiceStatusFilter
+      v-if="activeTab === 'service'"
+      v-model="activeServiceStatus"
+      :status-counts="serviceStatusCounts"
+      @status-change="onStatusChange"
+    />
+
     <div class="order-list-wrapper">
       <div v-if="loading" class="loading-state">
         <div class="loading-spinner"></div>
@@ -30,7 +37,7 @@
           <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
           <polyline points="14 2 14 8 20 8"></polyline>
         </svg>
-        <p>暂无{{ activeTab === 'service' ? '服务' : '购买' }}订单</p>
+        <p>{{ emptyText }}</p>
       </div>
 
       <div v-else class="order-list">
@@ -64,15 +71,35 @@
                 @click.stop="onPayOrder(order)"
               >立即支付</button>
               <button
-                v-if="order.status === 'paid'"
+                v-if="order.status === 'pending'"
+                class="action-btn action-btn--outline"
+                @click.stop="onCancelOrder(order)"
+              >取消订单</button>
+              <button
+                v-if="order.status === 'pending_service'"
                 class="action-btn action-btn--outline"
                 @click.stop="onViewDetail(order)"
               >查看详情</button>
               <button
-                v-if="order.status === 'paid'"
+                v-if="order.status === 'in_progress'"
+                class="action-btn action-btn--outline"
+                @click.stop="onViewDetail(order)"
+              >服务进度</button>
+              <button
+                v-if="order.status === 'to_review'"
                 class="action-btn action-btn--primary"
-                @click.stop="onConfirmReceive(order)"
-              >确认收货</button>
+                @click.stop="onReviewOrder(order)"
+              >去评价</button>
+              <button
+                v-if="order.status === 'completed'"
+                class="action-btn action-btn--outline"
+                @click.stop="onViewDetail(order)"
+              >查看详情</button>
+              <button
+                v-if="order.status === 'cancelled'"
+                class="action-btn action-btn--outline"
+                @click.stop="onRebookOrder(order)"
+              >重新下单</button>
             </div>
           </div>
         </div>
@@ -82,14 +109,38 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import OrderTabEntry from './components/OrderTabEntry.vue'
-import { getOrderSummary, getServiceOrders, getPurchaseOrders } from './api'
+import ServiceStatusFilter from './components/ServiceStatusFilter.vue'
+import { getOrderSummary, getServiceStatusCounts, getServiceOrders, getPurchaseOrders } from './api'
+
+const SERVICE_STATUS_TEXT = {
+  pending: '待付款',
+  pending_service: '待服务',
+  in_progress: '进行中',
+  to_review: '待评价',
+  completed: '已完成',
+  cancelled: '已取消',
+  paid: '已支付',
+  shipped: '已发货'
+}
+
+const SERVICE_STATUS_EMPTY_TEXT = {
+  all: '暂无服务订单',
+  pending: '暂无待付款订单',
+  pending_service: '暂无待服务订单',
+  in_progress: '暂无进行中的订单',
+  to_review: '暂无待评价订单',
+  completed: '暂无已完成订单',
+  cancelled: '暂无已取消订单'
+}
 
 const activeTab = ref('service')
+const activeServiceStatus = ref('all')
 const loading = ref(false)
 const serviceCount = ref(0)
 const purchaseCount = ref(0)
+const serviceStatusCounts = ref({})
 const serviceOrders = ref([])
 const purchaseOrders = ref([])
 
@@ -97,15 +148,13 @@ const currentOrders = computed(() => {
   return activeTab.value === 'service' ? serviceOrders.value : purchaseOrders.value
 })
 
+const emptyText = computed(() => {
+  if (activeTab.value === 'purchase') return '暂无购买订单'
+  return SERVICE_STATUS_EMPTY_TEXT[activeServiceStatus.value] || '暂无服务订单'
+})
+
 const statusText = (status) => {
-  const map = {
-    pending: '待支付',
-    paid: '已支付',
-    shipped: '已发货',
-    completed: '已完成',
-    cancelled: '已取消'
-  }
-  return map[status] || status
+  return SERVICE_STATUS_TEXT[status] || `未知(${status})`
 }
 
 const formatTime = (isoStr) => {
@@ -124,11 +173,24 @@ const fetchSummary = async () => {
   }
 }
 
+const fetchServiceStatusCounts = async () => {
+  try {
+    const data = await getServiceStatusCounts()
+    serviceStatusCounts.value = data
+  } catch (e) {
+    console.error('获取状态计数失败:', e)
+  }
+}
+
 const fetchOrders = async () => {
   loading.value = true
   try {
     if (activeTab.value === 'service') {
-      const data = await getServiceOrders()
+      const params = {}
+      if (activeServiceStatus.value !== 'all') {
+        params.status = activeServiceStatus.value
+      }
+      const data = await getServiceOrders(params)
       serviceOrders.value = data.list
     } else {
       const data = await getPurchaseOrders()
@@ -141,7 +203,15 @@ const fetchOrders = async () => {
   }
 }
 
-const onTabChange = (tab) => {
+const onTabChange = () => {
+  if (activeTab.value === 'service') {
+    activeServiceStatus.value = 'all'
+    fetchServiceStatusCounts()
+  }
+  fetchOrders()
+}
+
+const onStatusChange = (status) => {
   fetchOrders()
 }
 
@@ -153,16 +223,24 @@ const onPayOrder = (order) => {
   console.log('支付订单:', order.orderId)
 }
 
+const onCancelOrder = (order) => {
+  console.log('取消订单:', order.orderId)
+}
+
 const onViewDetail = (order) => {
   console.log('查看详情:', order.orderId)
 }
 
-const onConfirmReceive = (order) => {
-  console.log('确认收货:', order.orderId)
+const onReviewOrder = (order) => {
+  console.log('评价订单:', order.orderId)
+}
+
+const onRebookOrder = (order) => {
+  console.log('重新下单:', order.orderId)
 }
 
 onMounted(async () => {
-  await Promise.all([fetchSummary(), fetchOrders()])
+  await Promise.all([fetchSummary(), fetchServiceStatusCounts(), fetchOrders()])
 })
 </script>
 
@@ -301,20 +379,32 @@ onMounted(async () => {
   color: #ff8c00;
 }
 
+.order-status--pending_service {
+  color: #1890ff;
+}
+
+.order-status--in_progress {
+  color: #722ed1;
+}
+
+.order-status--to_review {
+  color: #faad14;
+}
+
+.order-status--completed {
+  color: #52c41a;
+}
+
+.order-status--cancelled {
+  color: #999;
+}
+
 .order-status--paid {
   color: #07c160;
 }
 
 .order-status--shipped {
   color: #1989fa;
-}
-
-.order-status--completed {
-  color: #999;
-}
-
-.order-status--cancelled {
-  color: #999;
 }
 
 .order-card-body {

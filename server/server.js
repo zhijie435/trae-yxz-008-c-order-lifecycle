@@ -3,12 +3,16 @@ import cors from 'cors'
 import {
   getServiceOrderCount,
   getPurchaseOrderCount,
+  getServiceStatusCounts,
   getServiceOrderList,
-  getPurchaseOrderList
+  getPurchaseOrderList,
+  SERVICE_STATUS_LABELS
 } from './seedData.js'
 
 const app = express()
 const PORT = 3001
+
+const VALID_SERVICE_STATUSES = Object.keys(SERVICE_STATUS_LABELS)
 
 app.use(cors())
 app.use(express.json())
@@ -28,8 +32,23 @@ app.get('/api/order/summary', (req, res) => {
   })
 })
 
+app.get('/api/order/service/status-counts', (req, res) => {
+  res.json({
+    code: 0,
+    message: 'success',
+    data: getServiceStatusCounts()
+  })
+})
+
 app.get('/api/order/service', (req, res) => {
-  const list = getServiceOrderList()
+  const { status } = req.query
+  if (status && status !== 'all' && !VALID_SERVICE_STATUSES.includes(status)) {
+    return res.status(400).json({
+      code: 1,
+      message: `无效的状态值: ${status}，有效值为: all, ${VALID_SERVICE_STATUSES.join(', ')}`
+    })
+  }
+  const list = getServiceOrderList(status || 'all')
   res.json({
     code: 0,
     message: 'success',
