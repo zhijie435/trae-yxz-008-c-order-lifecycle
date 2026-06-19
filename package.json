@@ -11,7 +11,10 @@
     "dev:all": "npm run dev:server & npm run dev",
     "install:all": "npm install && cd server && npm install",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:smoke": "node scripts/smoke-test.js",
+    "test:acceptance": "npm run test && node scripts/smoke-test.js",
+    "seed:info": "node scripts/seed-info.js"
   },
   "dependencies": {
     "vue": "^3.4.21"

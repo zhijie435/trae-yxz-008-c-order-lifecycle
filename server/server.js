@@ -14,6 +14,7 @@ import {
   getPurchaseOrderDetail,
   getRentalOrderDetail,
   updateOrderStatus,
+  validateStatusTransition,
   applyRenew,
   applyReturn,
   reRent,
@@ -180,16 +181,33 @@ app.post('/api/order/:orderId/status', (req, res) => {
       message: '缺少状态参数'
     })
   }
-  const success = updateOrderStatus(orderId, status)
-  if (!success) {
-    return res.status(404).json({
+  const result = updateOrderStatus(orderId, status)
+  if (!result.success) {
+    const statusCode = result.reason.includes('订单不存在') ? 404 : 400
+    return res.status(statusCode).json({
       code: 1,
-      message: '订单不存在'
+      message: result.reason
     })
   }
   res.json({
     code: 0,
-    message: 'success'
+    message: result.reason
+  })
+})
+
+app.post('/api/order/validate-transition', (req, res) => {
+  const { orderType, currentStatus, newStatus } = req.body
+  if (!orderType || !currentStatus || !newStatus) {
+    return res.status(400).json({
+      code: 1,
+      message: '缺少必要参数: orderType, currentStatus, newStatus'
+    })
+  }
+  const result = validateStatusTransition(orderType, currentStatus, newStatus)
+  res.json({
+    code: 0,
+    message: 'success',
+    data: result
   })
 })
 

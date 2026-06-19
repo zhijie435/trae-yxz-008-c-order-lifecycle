@@ -528,6 +528,103 @@ const rentalOrders = [
         status: 'pending'
       }
     }
+  },
+  {
+    orderId: 'RTL20240603003',
+    type: 'rental',
+    shopName: '数码租赁专营店',
+    productTitle: 'GoPro Hero 12 运动相机',
+    productImage: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=GoPro%20Hero%2012%20action%20camera%20black%20on%20white%20background%2C%20minimal%20product%20photo&image_size=square',
+    specText: '黑色 / 含全套配件',
+    quantity: 1,
+    unitPrice: 16.67,
+    totalPrice: 500,
+    status: RENTAL_STATUS.RETURN_APPLIED,
+    createTime: '2026-05-01T14:00:00.000Z',
+    rentalInfo: {
+      leaseMonths: 2,
+      monthlyRent: 500,
+      deposit: 2000,
+      startDate: '2026-05-03',
+      endDate: '2026-07-02',
+      totalRent: 1000,
+      paidMonths: 1,
+      nextPayDate: '',
+      returnInfo: {
+        applyTime: '2026-06-15T09:00:00.000Z',
+        reason: '使用完毕，提前归还',
+        status: 'pending'
+      }
+    }
+  },
+  {
+    orderId: 'RTL20240601004',
+    type: 'rental',
+    shopName: '租机侠官方旗舰店',
+    productTitle: 'Apple Vision Pro',
+    productImage: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Apple%20Vision%20Pro%20spatial%20computer%20on%20white%20background%2C%20minimal%20product%20photo&image_size=square',
+    specText: '256GB /  Solo Knit Band',
+    quantity: 1,
+    unitPrice: 99,
+    totalPrice: 2970,
+    status: RENTAL_STATUS.RENTING,
+    createTime: '2026-06-05T10:00:00.000Z',
+    rentalInfo: {
+      leaseMonths: 3,
+      monthlyRent: 2970,
+      deposit: 15000,
+      startDate: '2026-06-07',
+      endDate: '2026-09-06',
+      totalRent: 8910,
+      paidMonths: 0,
+      nextPayDate: '2026-06-22'
+    }
+  },
+  {
+    orderId: 'RTL20240602003',
+    type: 'rental',
+    shopName: '租机侠官方旗舰店',
+    productTitle: 'iPad Pro 12.9英寸 M4',
+    productImage: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=iPad%20Pro%2012.9%20inch%20silver%20tablet%20on%20white%20background%2C%20minimal%20product%20photo&image_size=square',
+    specText: '深空灰 / 256GB WiFi',
+    quantity: 1,
+    unitPrice: 16.67,
+    totalPrice: 500,
+    status: RENTAL_STATUS.PENDING,
+    createTime: '2026-06-19T09:30:00.000Z',
+    rentalInfo: {
+      leaseMonths: 6,
+      monthlyRent: 500,
+      deposit: 2500,
+      startDate: '',
+      endDate: '',
+      totalRent: 3000,
+      paidMonths: 0,
+      nextPayDate: ''
+    }
+  },
+  {
+    orderId: 'RTL20240604002',
+    type: 'rental',
+    shopName: '影像器材租赁',
+    productTitle: 'DJI Ronin-S 稳定器',
+    productImage: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=DJI%20Ronin-S%20camera%20gimbal%20stabilizer%20on%20white%20background%2C%20minimal%20product%20photo&image_size=square',
+    specText: '标准版 / 含手提箱',
+    quantity: 1,
+    unitPrice: 23.33,
+    totalPrice: 700,
+    status: RENTAL_STATUS.CANCELLED,
+    createTime: '2026-06-18T20:00:00.000Z',
+    rentalInfo: {
+      leaseMonths: 1,
+      monthlyRent: 700,
+      deposit: 2500,
+      startDate: '',
+      endDate: '',
+      totalRent: 700,
+      paidMonths: 0,
+      nextPayDate: ''
+    }
   }
 ]
 
@@ -803,14 +900,73 @@ export function getRentalOrderDetail(orderId) {
   return order ? buildOrderDetail(order) : null
 }
 
+const STATUS_TRANSITION_RULES = {
+  service: {
+    [SERVICE_STATUS.PENDING]: [SERVICE_STATUS.PENDING_SERVICE, SERVICE_STATUS.CANCELLED],
+    [SERVICE_STATUS.PENDING_SERVICE]: [SERVICE_STATUS.IN_PROGRESS, SERVICE_STATUS.CANCELLED],
+    [SERVICE_STATUS.IN_PROGRESS]: [SERVICE_STATUS.TO_REVIEW],
+    [SERVICE_STATUS.TO_REVIEW]: [SERVICE_STATUS.COMPLETED],
+    [SERVICE_STATUS.COMPLETED]: [],
+    [SERVICE_STATUS.CANCELLED]: []
+  },
+  purchase: {
+    [PURCHASE_STATUS.PENDING_SHIPMENT]: [PURCHASE_STATUS.PENDING_RECEIPT],
+    [PURCHASE_STATUS.PENDING_RECEIPT]: [PURCHASE_STATUS.TO_REVIEW],
+    [PURCHASE_STATUS.TO_REVIEW]: [PURCHASE_STATUS.COMPLETED],
+    [PURCHASE_STATUS.COMPLETED]: []
+  },
+  rental: {
+    [RENTAL_STATUS.PENDING]: [RENTAL_STATUS.PENDING_SHIPMENT, RENTAL_STATUS.CANCELLED],
+    [RENTAL_STATUS.PENDING_SHIPMENT]: [RENTAL_STATUS.PENDING_RECEIPT],
+    [RENTAL_STATUS.PENDING_RECEIPT]: [RENTAL_STATUS.RENTING],
+    [RENTAL_STATUS.RENTING]: [RENTAL_STATUS.RENEW_APPLIED, RENTAL_STATUS.RETURN_APPLIED, RENTAL_STATUS.TO_REVIEW],
+    [RENTAL_STATUS.RENEW_APPLIED]: [RENTAL_STATUS.RENTING, RENTAL_STATUS.TO_REVIEW],
+    [RENTAL_STATUS.RETURN_APPLIED]: [RENTAL_STATUS.RENTING, RENTAL_STATUS.TO_REVIEW],
+    [RENTAL_STATUS.TO_REVIEW]: [RENTAL_STATUS.COMPLETED],
+    [RENTAL_STATUS.COMPLETED]: [],
+    [RENTAL_STATUS.CANCELLED]: []
+  }
+}
+
+export function validateStatusTransition(orderType, currentStatus, newStatus) {
+  const typeRules = STATUS_TRANSITION_RULES[orderType]
+  if (!typeRules) {
+    return { valid: false, reason: `未知订单类型: ${orderType}` }
+  }
+  if (currentStatus === newStatus) {
+    return { valid: true, reason: '状态未变更' }
+  }
+  const allowedTransitions = typeRules[currentStatus]
+  if (!allowedTransitions) {
+    return { valid: false, reason: `未知当前状态: ${currentStatus}` }
+  }
+  if (allowedTransitions.length === 0) {
+    return { valid: false, reason: `当前状态 ${currentStatus} 为终态，不允许变更` }
+  }
+  if (!allowedTransitions.includes(newStatus)) {
+    return {
+      valid: false,
+      reason: `非法状态迁移: ${currentStatus} → ${newStatus}，允许迁移到: ${allowedTransitions.join(', ') || '无'}`
+    }
+  }
+  return { valid: true, reason: '合法状态迁移' }
+}
+
 export function updateOrderStatus(orderId, newStatus) {
   const allOrders = [...serviceOrders, ...purchaseOrders, ...rentalOrders]
   const order = allOrders.find(o => o.orderId === orderId)
-  if (order) {
-    order.status = newStatus
-    return true
+  if (!order) {
+    return { success: false, reason: '订单不存在' }
   }
-  return false
+  if (order.status === newStatus) {
+    return { success: true, reason: '状态未变更' }
+  }
+  const validation = validateStatusTransition(order.type, order.status, newStatus)
+  if (!validation.valid) {
+    return { success: false, reason: validation.reason }
+  }
+  order.status = newStatus
+  return { success: true, reason: '状态更新成功' }
 }
 
 export function applyRenew(orderId, extendMonths) {
