@@ -381,7 +381,7 @@
           @click="handleRebookOrder"
         >重新下单</button>
       </template>
-      <template v-else>
+      <template v-else-if="order.type === 'purchase'">
         <button
           v-if="order.status === 'pending_shipment'"
           class="action-btn action-btn--outline"
@@ -413,7 +413,17 @@
           @click="handleRebookOrder"
         >再次购买</button>
       </template>
-      <template v-if="order.type === 'rental'">
+      <template v-else-if="order.type === 'rental'">
+        <button
+          v-if="order.status === 'pending'"
+          class="action-btn action-btn--outline"
+          @click="handleCancelOrder"
+        >取消订单</button>
+        <button
+          v-if="order.status === 'pending'"
+          class="action-btn action-btn--primary"
+          @click="handlePayOrder"
+        >立即支付</button>
         <button
           v-if="order.status === 'pending_shipment'"
           class="action-btn action-btn--outline"
@@ -456,6 +466,11 @@
         >联系客服</button>
         <button
           v-if="order.status === 'completed'"
+          class="action-btn action-btn--primary"
+          @click="handleReRent"
+        >再次租赁</button>
+        <button
+          v-if="order.status === 'cancelled'"
           class="action-btn action-btn--primary"
           @click="handleReRent"
         >再次租赁</button>
