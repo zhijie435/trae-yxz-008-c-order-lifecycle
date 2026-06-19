@@ -3,18 +3,26 @@ import cors from 'cors'
 import {
   getServiceOrderCount,
   getPurchaseOrderCount,
+  getRentalOrderCount,
   getServiceStatusCounts,
   getPurchaseStatusCounts,
+  getRentalStatusCounts,
   getServiceOrderList,
   getPurchaseOrderList,
+  getRentalOrderList,
   getServiceOrderDetail,
   getPurchaseOrderDetail,
+  getRentalOrderDetail,
   updateOrderStatus,
+  applyRenew,
+  applyReturn,
+  reRent,
   getCsFaqs,
   getChatHistory,
   sendMessage,
   SERVICE_STATUS_LABELS,
-  PURCHASE_STATUS_LABELS
+  PURCHASE_STATUS_LABELS,
+  RENTAL_STATUS_LABELS
 } from './seedData.js'
 
 const app = express()
@@ -22,6 +30,7 @@ const PORT = 3001
 
 const VALID_SERVICE_STATUSES = Object.keys(SERVICE_STATUS_LABELS)
 const VALID_PURCHASE_STATUSES = Object.keys(PURCHASE_STATUS_LABELS)
+const VALID_RENTAL_STATUSES = Object.keys(RENTAL_STATUS_LABELS)
 
 app.use(cors())
 app.use(express.json())
@@ -36,8 +45,17 @@ app.get('/api/order/summary', (req, res) => {
     message: 'success',
     data: {
       serviceCount: getServiceOrderCount(),
-      purchaseCount: getPurchaseOrderCount()
+      purchaseCount: getPurchaseOrderCount(),
+      rentalCount: getRentalOrderCount()
     }
+  })
+})
+
+app.get('/api/order/rental/status-counts', (req, res) => {
+  res.json({
+    code: 0,
+    message: 'success',
+    data: getRentalStatusCounts()
   })
 })
 
@@ -89,6 +107,22 @@ app.get('/api/order/purchase', (req, res) => {
   })
 })
 
+app.get('/api/order/rental', (req, res) => {
+  const { status } = req.query
+  if (status && status !== 'all' && !VALID_RENTAL_STATUSES.includes(status)) {
+    return res.status(400).json({
+      code: 1,
+      message: `无效的状态值: ${status}，有效值为: all, ${VALID_RENTAL_STATUSES.join(', ')}`
+    })
+  }
+  const list = getRentalOrderList(status || 'all')
+  res.json({
+    code: 0,
+    message: 'success',
+    data: { list }
+  })
+})
+
 app.get('/api/order/service/:orderId', (req, res) => {
   const { orderId } = req.params
   const detail = getServiceOrderDetail(orderId)
@@ -121,6 +155,22 @@ app.get('/api/order/purchase/:orderId', (req, res) => {
   })
 })
 
+app.get('/api/order/rental/:orderId', (req, res) => {
+  const { orderId } = req.params
+  const detail = getRentalOrderDetail(orderId)
+  if (!detail) {
+    return res.status(404).json({
+      code: 1,
+      message: '订单不存在'
+    })
+  }
+  res.json({
+    code: 0,
+    message: 'success',
+    data: detail
+  })
+})
+
 app.post('/api/order/:orderId/status', (req, res) => {
   const { orderId } = req.params
   const { status } = req.body
@@ -140,6 +190,53 @@ app.post('/api/order/:orderId/status', (req, res) => {
   res.json({
     code: 0,
     message: 'success'
+  })
+})
+
+app.post('/api/order/rental/:orderId/renew', (req, res) => {
+  const { orderId } = req.params
+  const { extendMonths = 1 } = req.body
+  const success = applyRenew(orderId, extendMonths)
+  if (!success) {
+    return res.status(400).json({
+      code: 1,
+      message: '续租申请失败，订单状态不支持续租'
+    })
+  }
+  res.json({
+    code: 0,
+    message: '续租申请已提交'
+  })
+})
+
+app.post('/api/order/rental/:orderId/return', (req, res) => {
+  const { orderId } = req.params
+  const success = applyReturn(orderId)
+  if (!success) {
+    return res.status(400).json({
+      code: 1,
+      message: '退租申请失败，订单状态不支持退租'
+    })
+  }
+  res.json({
+    code: 0,
+    message: '退租申请已提交'
+  })
+})
+
+app.post('/api/order/rental/:orderId/re-rent', (req, res) => {
+  const { orderId } = req.params
+  const data = reRent(orderId)
+  if (!data) {
+    return res.status(404).json({
+      code: 1,
+      message: '订单不存在'
+    })
+  }
+  res.json({
+    code: 0,
+    message: 'success',
+    data
   })
 })
 

@@ -25,11 +25,13 @@
       v-model="activeTab"
       :service-count="serviceCount"
       :purchase-count="purchaseCount"
+      :rental-count="rentalCount"
       @tab-change="onTabChange"
     />
 
     <StatusFilter
       v-if="activeTab === 'service'"
+      key="service-filter"
       v-model="activeServiceStatus"
       :tabs="serviceTabs"
       :status-counts="serviceStatusCounts"
@@ -38,9 +40,19 @@
 
     <StatusFilter
       v-if="activeTab === 'purchase'"
+      key="purchase-filter"
       v-model="activePurchaseStatus"
       :tabs="purchaseTabs"
       :status-counts="purchaseStatusCounts"
+      @status-change="onStatusChange"
+    />
+
+    <StatusFilter
+      v-if="activeTab === 'rental'"
+      key="rental-filter"
+      v-model="activeRentalStatus"
+      :tabs="rentalTabs"
+      :status-counts="rentalStatusCounts"
       @status-change="onStatusChange"
     />
 
@@ -76,8 +88,14 @@
               <p class="order-spec">{{ order.specText }}</p>
             </div>
             <div class="order-price-col">
-              <p class="order-price">¥{{ order.totalPrice.toFixed(2) }}</p>
-              <p class="order-qty">×{{ order.quantity }}</p>
+              <template v-if="order.type === 'rental'">
+                <p class="order-price">¥{{ order.unitPrice?.toFixed(2) || '0.00' }}<span class="price-unit">/天</span></p>
+                <p class="price-sub">月付 ¥{{ order.rentalInfo?.monthlyRent?.toFixed(2) || order.totalPrice?.toFixed(2) || '0.00' }}</p>
+              </template>
+              <template v-else>
+                <p class="order-price">¥{{ order.totalPrice.toFixed(2) }}</p>
+                <p class="order-qty">×{{ order.quantity }}</p>
+              </template>
             </div>
           </div>
           <div class="order-card-footer">
@@ -152,6 +170,53 @@
                   @click.stop="onRebookOrder(order)"
                 >再次购买</button>
               </template>
+              <template v-if="activeTab === 'rental'">
+                <button
+                  v-if="order.status === 'pending_shipment'"
+                  class="action-btn action-btn--outline"
+                  @click.stop="onViewDetail(order)"
+                >查看详情</button>
+                <button
+                  v-if="order.status === 'pending_receipt'"
+                  class="action-btn action-btn--primary"
+                  @click.stop="onConfirmReceive(order)"
+                >确认收货</button>
+                <button
+                  v-if="order.status === 'pending_receipt'"
+                  class="action-btn action-btn--outline"
+                  @click.stop="onViewLogistics(order)"
+                >查看物流</button>
+                <button
+                  v-if="order.status === 'renting'"
+                  class="action-btn action-btn--primary"
+                  @click.stop="onViewDetail(order)"
+                >申请续租</button>
+                <button
+                  v-if="order.status === 'renting'"
+                  class="action-btn action-btn--outline"
+                  @click.stop="onViewDetail(order)"
+                >申请退租</button>
+                <button
+                  v-if="order.status === 'to_review'"
+                  class="action-btn action-btn--primary"
+                  @click.stop="onReviewOrder(order)"
+                >去评价</button>
+                <button
+                  v-if="order.status === 'completed'"
+                  class="action-btn action-btn--outline"
+                  @click.stop="onViewDetail(order)"
+                >查看详情</button>
+                <button
+                  v-if="order.status === 'completed'"
+                  class="action-btn action-btn--primary"
+                  @click.stop="onRebookOrder(order)"
+                >再次租赁</button>
+                <button
+                  v-if="order.status === 'renew_applied' || order.status === 'return_applied'"
+                  class="action-btn action-btn--outline"
+                  @click.stop="onViewDetail(order)"
+                >查看详情</button>
+              </template>
             </div>
           </div>
         </div>
@@ -186,9 +251,12 @@ import {
   getOrderSummary,
   getServiceStatusCounts,
   getPurchaseStatusCounts,
+  getRentalStatusCounts,
   getServiceOrders,
   getPurchaseOrders,
-  updateOrderStatus
+  getRentalOrders,
+  updateOrderStatus,
+  applyReRent
 } from './api'
 
 const SERVICE_TABS = [
@@ -209,12 +277,26 @@ const PURCHASE_TABS = [
   { value: 'completed', label: '已完成' }
 ]
 
+const RENTAL_TABS = [
+  { value: 'all', label: '全部' },
+  { value: 'pending_shipment', label: '待发货' },
+  { value: 'pending_receipt', label: '待收货' },
+  { value: 'renting', label: '租赁中' },
+  { value: 'renew_applied', label: '续租中' },
+  { value: 'return_applied', label: '退租中' },
+  { value: 'to_review', label: '待评价' },
+  { value: 'completed', label: '已完成' }
+]
+
 const STATUS_TEXT = {
   pending: '待付款',
   pending_service: '待服务',
   in_progress: '进行中',
   pending_shipment: '待发货',
   pending_receipt: '待收货',
+  renting: '租赁中',
+  renew_applied: '续租审核中',
+  return_applied: '退租审核中',
   to_review: '待评价',
   completed: '已完成',
   cancelled: '已取消'
@@ -238,6 +320,17 @@ const PURCHASE_EMPTY_TEXT = {
   completed: '暂无已完成订单'
 }
 
+const RENTAL_EMPTY_TEXT = {
+  all: '暂无租赁订单',
+  pending_shipment: '暂无待发货订单',
+  pending_receipt: '暂无待收货订单',
+  renting: '暂无租赁中订单',
+  renew_applied: '暂无续租审核中订单',
+  return_applied: '暂无退租审核中订单',
+  to_review: '暂无待评价订单',
+  completed: '暂无已完成订单'
+}
+
 const currentPage = ref('list')
 const selectedOrderId = ref('')
 const selectedOrderType = ref('')
@@ -250,24 +343,34 @@ const csDefaultType = ref('after')
 const activeTab = ref('service')
 const activeServiceStatus = ref('all')
 const activePurchaseStatus = ref('all')
+const activeRentalStatus = ref('all')
 const loading = ref(false)
 const serviceCount = ref(0)
 const purchaseCount = ref(0)
+const rentalCount = ref(0)
 const serviceStatusCounts = ref({})
 const purchaseStatusCounts = ref({})
+const rentalStatusCounts = ref({})
 const serviceOrders = ref([])
 const purchaseOrders = ref([])
+const rentalOrders = ref([])
 
 const serviceTabs = SERVICE_TABS
 const purchaseTabs = PURCHASE_TABS
+const rentalTabs = RENTAL_TABS
 
 const currentOrders = computed(() => {
-  return activeTab.value === 'service' ? serviceOrders.value : purchaseOrders.value
+  if (activeTab.value === 'service') return serviceOrders.value
+  if (activeTab.value === 'purchase') return purchaseOrders.value
+  return rentalOrders.value
 })
 
 const emptyText = computed(() => {
   if (activeTab.value === 'purchase') {
     return PURCHASE_EMPTY_TEXT[activePurchaseStatus.value] || '暂无购买订单'
+  }
+  if (activeTab.value === 'rental') {
+    return RENTAL_EMPTY_TEXT[activeRentalStatus.value] || '暂无租赁订单'
   }
   return SERVICE_EMPTY_TEXT[activeServiceStatus.value] || '暂无服务订单'
 })
@@ -287,6 +390,7 @@ const fetchSummary = async () => {
     const data = await getOrderSummary()
     serviceCount.value = data.serviceCount
     purchaseCount.value = data.purchaseCount
+    rentalCount.value = data.rentalCount || 0
   } catch (e) {
     console.error('获取订单概要失败:', e)
   }
@@ -310,6 +414,15 @@ const fetchPurchaseStatusCounts = async () => {
   }
 }
 
+const fetchRentalStatusCounts = async () => {
+  try {
+    const data = await getRentalStatusCounts()
+    rentalStatusCounts.value = data
+  } catch (e) {
+    console.error('获取租赁状态计数失败:', e)
+  }
+}
+
 const fetchOrders = async () => {
   loading.value = true
   try {
@@ -320,13 +433,20 @@ const fetchOrders = async () => {
       }
       const data = await getServiceOrders(params)
       serviceOrders.value = data.list
-    } else {
+    } else if (activeTab.value === 'purchase') {
       const params = {}
       if (activePurchaseStatus.value !== 'all') {
         params.status = activePurchaseStatus.value
       }
       const data = await getPurchaseOrders(params)
       purchaseOrders.value = data.list
+    } else {
+      const params = {}
+      if (activeRentalStatus.value !== 'all') {
+        params.status = activeRentalStatus.value
+      }
+      const data = await getRentalOrders(params)
+      rentalOrders.value = data.list
     }
   } catch (e) {
     console.error('获取订单列表失败:', e)
@@ -339,9 +459,12 @@ const onTabChange = () => {
   if (activeTab.value === 'service') {
     activeServiceStatus.value = 'all'
     fetchServiceStatusCounts()
-  } else {
+  } else if (activeTab.value === 'purchase') {
     activePurchaseStatus.value = 'all'
     fetchPurchaseStatusCounts()
+  } else {
+    activeRentalStatus.value = 'all'
+    fetchRentalStatusCounts()
   }
   fetchOrders()
 }
@@ -373,6 +496,7 @@ const onOrderUpdated = async () => {
     fetchSummary(),
     fetchServiceStatusCounts(),
     fetchPurchaseStatusCounts(),
+    fetchRentalStatusCounts(),
     fetchOrders()
   ])
 }
@@ -416,13 +540,23 @@ const onReviewOrder = async (order) => {
   }
 }
 
-const onRebookOrder = (order) => {
-  showToastMessage('已加入购物车')
+const onRebookOrder = async (order) => {
+  if (order.type === 'rental') {
+    try {
+      const data = await applyReRent(order.orderId)
+      showToastMessage(`已为您添加「${data?.productTitle || '商品'}」到租赁购物车`)
+    } catch (e) {
+      showToastMessage('操作成功，已加入租赁购物车')
+    }
+  } else {
+    showToastMessage('已加入购物车')
+  }
 }
 
 const onConfirmReceive = async (order) => {
   try {
-    await updateOrderStatus(order.orderId, 'to_review')
+    const nextStatus = order.type === 'rental' ? 'renting' : 'to_review'
+    await updateOrderStatus(order.orderId, nextStatus)
     showToastMessage('确认收货成功')
     await onOrderUpdated()
   } catch (e) {
@@ -449,6 +583,7 @@ onMounted(async () => {
     fetchSummary(),
     fetchServiceStatusCounts(),
     fetchPurchaseStatusCounts(),
+    fetchRentalStatusCounts(),
     fetchOrders()
   ])
 })
@@ -617,6 +752,18 @@ onMounted(async () => {
   color: #999;
 }
 
+.order-status--pending_delivery {
+  color: #1890ff;
+}
+
+.order-status--in_rent {
+  color: #722ed1;
+}
+
+.order-status--pending_return {
+  color: #fa8c16;
+}
+
 .order-card-body {
   display: flex;
   align-items: center;
@@ -768,5 +915,18 @@ onMounted(async () => {
   font-size: 10px;
   font-weight: 500;
   line-height: 1;
+}
+
+.price-unit {
+  font-size: 11px;
+  color: #999;
+  font-weight: 400;
+  margin-left: 2px;
+}
+
+.price-sub {
+  font-size: 11px;
+  color: #999;
+  margin-top: 2px;
 }
 </style>

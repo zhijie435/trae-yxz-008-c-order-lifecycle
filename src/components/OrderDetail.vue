@@ -101,7 +101,13 @@
             <p class="product-qty">x{{ order.quantity }}</p>
           </div>
           <div class="product-price">
-            <p class="price-text">¥{{ order.totalPrice.toFixed(2) }}</p>
+            <template v-if="order.type === 'rental'">
+              <p class="price-text">¥{{ order.unitPrice.toFixed(2) }}<span class="price-unit">/天</span></p>
+              <p class="price-sub">月付 ¥{{ order.rentalInfo?.monthlyRent?.toFixed(2) || order.totalPrice.toFixed(2) }}</p>
+            </template>
+            <template v-else>
+              <p class="price-text">¥{{ order.totalPrice.toFixed(2) }}</p>
+            </template>
           </div>
         </div>
       </div>
@@ -169,7 +175,101 @@
         </div>
       </div>
 
-      <div class="info-section">
+      <div v-if="order.type === 'rental' && order.logistics && order.logistics.trackingNo && order.status !== 'renting' && order.status !== 'to_review' && order.status !== 'completed'" class="info-section">
+        <h3 class="section-title">物流信息</h3>
+        <div class="info-card">
+          <div class="info-row">
+            <span class="info-label">物流公司</span>
+            <span class="info-value">{{ order.logistics.company }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">物流单号</span>
+            <div class="tracking-row">
+              <span class="info-value">{{ order.logistics.trackingNo }}</span>
+              <button class="copy-btn" @click="copyToClipboard(order.logistics.trackingNo)">复制</button>
+            </div>
+          </div>
+          <div class="info-row">
+            <span class="info-label">预计送达</span>
+            <span class="info-value">{{ order.logistics.estimatedTime }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="order.type === 'rental' && order.rentalInfo" class="info-section">
+        <h3 class="section-title">租赁信息</h3>
+        <div v-if="order.status === 'renting'" class="countdown-card">
+          <div class="countdown-header">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+            <span class="countdown-title">租期倒计时</span>
+          </div>
+          <div class="countdown-timer">
+            <div class="countdown-item">
+              <span class="countdown-num">{{ countdown.days }}</span>
+              <span class="countdown-unit">天</span>
+            </div>
+            <div class="countdown-sep">:</div>
+            <div class="countdown-item">
+              <span class="countdown-num">{{ countdown.hours }}</span>
+              <span class="countdown-unit">时</span>
+            </div>
+            <div class="countdown-sep">:</div>
+            <div class="countdown-item">
+              <span class="countdown-num">{{ countdown.minutes }}</span>
+              <span class="countdown-unit">分</span>
+            </div>
+            <div class="countdown-sep">:</div>
+            <div class="countdown-item">
+              <span class="countdown-num">{{ countdown.seconds }}</span>
+              <span class="countdown-unit">秒</span>
+            </div>
+          </div>
+          <p class="countdown-end-date">租期至 {{ order.rentalInfo.endDate }}</p>
+        </div>
+        <div class="info-card rental-info-card">
+          <div class="info-row">
+            <span class="info-label">租赁方式</span>
+            <span class="info-value">月租</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">月租金</span>
+            <span class="info-value info-value--price">¥{{ order.rentalInfo.monthlyRent.toFixed(2) }}/月</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">租期</span>
+            <span class="info-value">{{ order.rentalInfo.leaseMonths }}个月</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">起租日期</span>
+            <span class="info-value">{{ order.rentalInfo.startDate || '--' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">到期日期</span>
+            <span class="info-value">{{ order.rentalInfo.endDate || '--' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">已缴纳租金</span>
+            <span class="info-value">{{ order.rentalInfo.paidMonths }}期 / 共{{ order.rentalInfo.leaseMonths }}期</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">保证金</span>
+            <span class="info-value">¥{{ order.rentalInfo.deposit.toFixed(2) }}</span>
+          </div>
+          <div v-if="order.rentalInfo.nextPayDate" class="info-row">
+            <span class="info-label">下次付租</span>
+            <span class="info-value info-value--highlight">{{ order.rentalInfo.nextPayDate }}</span>
+          </div>
+          <div class="info-row info-row--total">
+            <span class="info-label">租金总计</span>
+            <span class="info-value info-value--total">¥{{ order.rentalInfo.totalRent.toFixed(2) }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="order.type !== 'rental'" class="info-section">
         <h3 class="section-title">支付信息</h3>
         <div class="info-card">
           <div class="info-row">
@@ -183,6 +283,32 @@
           <div class="info-row info-row--total">
             <span class="info-label">实付金额</span>
             <span class="info-value info-value--total">¥{{ order.totalPrice.toFixed(2) }}</span>
+          </div>
+          <div v-if="order.payInfo.payMethod" class="info-row">
+            <span class="info-label">支付方式</span>
+            <span class="info-value">{{ order.payInfo.payMethod }}</span>
+          </div>
+          <div v-if="order.payInfo.payTime" class="info-row">
+            <span class="info-label">支付时间</span>
+            <span class="info-value">{{ order.payInfo.payTime }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="order.type === 'rental'" class="info-section">
+        <h3 class="section-title">支付信息</h3>
+        <div class="info-card">
+          <div class="info-row">
+            <span class="info-label">首期租金</span>
+            <span class="info-value">¥{{ order.totalPrice.toFixed(2) }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">保证金</span>
+            <span class="info-value">¥{{ order.rentalInfo?.deposit?.toFixed(2) || '0.00' }}</span>
+          </div>
+          <div class="info-row info-row--total">
+            <span class="info-label">已支付金额</span>
+            <span class="info-value info-value--total">¥{{ (order.totalPrice + (order.rentalInfo?.deposit || 0)).toFixed(2) }}</span>
           </div>
           <div v-if="order.payInfo.payMethod" class="info-row">
             <span class="info-label">支付方式</span>
@@ -287,6 +413,53 @@
           @click="handleRebookOrder"
         >再次购买</button>
       </template>
+      <template v-if="order.type === 'rental'">
+        <button
+          v-if="order.status === 'pending_shipment'"
+          class="action-btn action-btn--outline"
+          @click="handleContactService"
+        >联系商家</button>
+        <button
+          v-if="order.status === 'pending_receipt'"
+          class="action-btn action-btn--outline"
+          @click="handleViewLogistics"
+        >查看物流</button>
+        <button
+          v-if="order.status === 'pending_receipt'"
+          class="action-btn action-btn--primary"
+          @click="handleConfirmReceive"
+        >确认收货</button>
+        <button
+          v-if="order.status === 'renting'"
+          class="action-btn action-btn--outline"
+          @click="handleApplyReturn"
+        >申请退租</button>
+        <button
+          v-if="order.status === 'renting'"
+          class="action-btn action-btn--primary"
+          @click="handleApplyRenew"
+        >申请续租</button>
+        <button
+          v-if="order.status === 'renew_applied' || order.status === 'return_applied'"
+          class="action-btn action-btn--outline"
+          @click="handleContactService"
+        >联系客服</button>
+        <button
+          v-if="order.status === 'to_review'"
+          class="action-btn action-btn--primary"
+          @click="handleReviewOrder"
+        >去评价</button>
+        <button
+          v-if="order.status === 'completed'"
+          class="action-btn action-btn--outline"
+          @click="handleContactService"
+        >联系客服</button>
+        <button
+          v-if="order.status === 'completed'"
+          class="action-btn action-btn--primary"
+          @click="handleReRent"
+        >再次租赁</button>
+      </template>
     </div>
 
     <div v-if="showToast" class="toast">{{ toastMessage }}</div>
@@ -300,11 +473,15 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import {
   getServiceOrderDetail,
   getPurchaseOrderDetail,
-  updateOrderStatus
+  getRentalOrderDetail,
+  updateOrderStatus,
+  applyRentalRenew,
+  applyRentalReturn,
+  applyReRent
 } from '../api'
 import CsServicePanel from './CsServicePanel.vue'
 
@@ -316,7 +493,7 @@ const props = defineProps({
   orderType: {
     type: String,
     required: true,
-    validator: (v) => ['service', 'purchase'].includes(v)
+    validator: (v) => ['service', 'purchase', 'rental'].includes(v)
   }
 })
 
@@ -328,6 +505,10 @@ const order = ref(null)
 const showToast = ref(false)
 const toastMessage = ref('')
 const showCsPanel = ref(false)
+const countdown = ref({ days: '00', hours: '00', minutes: '00', seconds: '00' })
+let countdownTimer = null
+let endTimeMs = null
+let visibilityHandler = null
 
 const STATUS_TEXT = {
   pending: '待付款',
@@ -335,6 +516,9 @@ const STATUS_TEXT = {
   in_progress: '进行中',
   pending_shipment: '待发货',
   pending_receipt: '待收货',
+  renting: '租赁中',
+  renew_applied: '续租审核中',
+  return_applied: '退租审核中',
   to_review: '待评价',
   completed: '已完成',
   cancelled: '已取消'
@@ -348,8 +532,11 @@ const currentStatusDesc = computed(() => {
     in_progress: '服务进行中，请保持电话畅通',
     pending_shipment: '商家正在备货，请耐心等待',
     pending_receipt: '商品已发出，请注意查收',
-    to_review: '订单已完成，快去评价吧',
-    completed: '感谢您的支持，欢迎再次光临',
+    renting: '租赁进行中，享受您的租赁时光',
+    renew_applied: '续租申请已提交，等待审核',
+    return_applied: '退租申请已提交，等待审核',
+    to_review: '租期已结束，快去评价吧',
+    completed: '感谢您的支持，欢迎再次租赁',
     cancelled: '订单已取消'
   }
   return descMap[order.value.status] || ''
@@ -377,6 +564,81 @@ const copyToClipboard = (text) => {
   })
 }
 
+const startCountdown = () => {
+  stopCountdown()
+  if (!order.value || !order.value.rentalInfo?.endDate || order.value.status !== 'renting') return
+
+  endTimeMs = new Date(order.value.rentalInfo.endDate + ' 23:59:59').getTime()
+
+  const updateCountdown = () => {
+    const now = Date.now()
+    const diff = Math.max(0, endTimeMs - now)
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000)
+    const pad = (n) => String(n).padStart(2, '0')
+    countdown.value = {
+      days: pad(days),
+      hours: pad(hours),
+      minutes: pad(minutes),
+      seconds: pad(seconds)
+    }
+  }
+
+  updateCountdown()
+  countdownTimer = setInterval(updateCountdown, 1000)
+
+  if (typeof document !== 'undefined') {
+    visibilityHandler = () => {
+      if (document.visibilityState === 'visible') {
+        updateCountdown()
+      }
+    }
+    document.addEventListener('visibilitychange', visibilityHandler)
+  }
+}
+
+const stopCountdown = () => {
+  if (countdownTimer) {
+    clearInterval(countdownTimer)
+    countdownTimer = null
+  }
+  if (visibilityHandler && typeof document !== 'undefined') {
+    document.removeEventListener('visibilitychange', visibilityHandler)
+    visibilityHandler = null
+  }
+  endTimeMs = null
+}
+
+watch(
+  () => (order.value ? { status: order.value.status, endDate: order.value.rentalInfo?.endDate } : null),
+  (watchVal) => {
+    if (
+      order.value &&
+      order.value.type === 'rental' &&
+      order.value.status === 'renting' &&
+      order.value.rentalInfo?.endDate
+    ) {
+      startCountdown()
+    } else {
+      stopCountdown()
+    }
+  },
+  { immediate: true, deep: true }
+)
+
+watch(
+  () => [props.orderId, props.orderType],
+  () => {
+    stopCountdown()
+  }
+)
+
+onUnmounted(() => {
+  stopCountdown()
+})
+
 const fetchDetail = async () => {
   loading.value = true
   error.value = ''
@@ -384,6 +646,8 @@ const fetchDetail = async () => {
     let data
     if (props.orderType === 'service') {
       data = await getServiceOrderDetail(props.orderId)
+    } else if (props.orderType === 'rental') {
+      data = await getRentalOrderDetail(props.orderId)
     } else {
       data = await getPurchaseOrderDetail(props.orderId)
     }
@@ -397,7 +661,12 @@ const fetchDetail = async () => {
 
 const handlePayOrder = async () => {
   try {
-    const nextStatus = props.orderType === 'service' ? 'pending_service' : 'pending_shipment'
+    let nextStatus = 'pending_shipment'
+    if (props.orderType === 'service') {
+      nextStatus = 'pending_service'
+    } else if (props.orderType === 'rental') {
+      nextStatus = 'pending_shipment'
+    }
     await updateOrderStatus(props.orderId, nextStatus)
     showToastMessage('支付成功')
     emit('order-updated')
@@ -420,7 +689,8 @@ const handleCancelOrder = async () => {
 
 const handleConfirmReceive = async () => {
   try {
-    await updateOrderStatus(props.orderId, 'to_review')
+    const nextStatus = props.orderType === 'rental' ? 'renting' : 'to_review'
+    await updateOrderStatus(props.orderId, nextStatus)
     showToastMessage('确认收货成功')
     emit('order-updated')
     await fetchDetail()
@@ -454,6 +724,37 @@ const handleContactServicePerson = () => {
 
 const handleViewLogistics = () => {
   showToastMessage('查看物流详情')
+}
+
+const handleApplyRenew = async () => {
+  try {
+    await applyRentalRenew(props.orderId, 1)
+    showToastMessage('续租申请已提交')
+    emit('order-updated')
+    await fetchDetail()
+  } catch (e) {
+    showToastMessage(e.message || '申请失败')
+  }
+}
+
+const handleApplyReturn = async () => {
+  try {
+    await applyRentalReturn(props.orderId)
+    showToastMessage('退租申请已提交')
+    emit('order-updated')
+    await fetchDetail()
+  } catch (e) {
+    showToastMessage(e.message || '申请失败')
+  }
+}
+
+const handleReRent = async () => {
+  try {
+    const data = await applyReRent(props.orderId)
+    showToastMessage(`已为您添加「${data?.productTitle || '商品'}」到租赁购物车`)
+  } catch (e) {
+    showToastMessage('操作成功，已加入租赁购物车')
+  }
 }
 
 onMounted(() => {
@@ -982,5 +1283,97 @@ onMounted(() => {
     opacity: 1;
     transform: translate(-50%, -50%) scale(1);
   }
+}
+
+.price-unit {
+  font-size: 12px;
+  color: #999;
+  font-weight: 400;
+  margin-left: 2px;
+}
+
+.price-sub {
+  font-size: 12px;
+  color: #999;
+  margin-top: 4px;
+}
+
+.countdown-card {
+  background: linear-gradient(135deg, #ff6b6b 0%, #ff2442 100%);
+  border-radius: 12px;
+  padding: 20px;
+  color: #fff;
+  margin-bottom: 12px;
+}
+
+.countdown-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  opacity: 0.9;
+}
+
+.countdown-title {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.countdown-timer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.countdown-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.countdown-num {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1;
+  min-width: 40px;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  padding: 6px 4px;
+}
+
+.countdown-unit {
+  font-size: 11px;
+  opacity: 0.8;
+}
+
+.countdown-sep {
+  font-size: 20px;
+  font-weight: 700;
+  opacity: 0.8;
+  margin-bottom: 16px;
+}
+
+.countdown-end-date {
+  text-align: center;
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.rental-info-card {
+  padding: 0 16px;
+}
+
+.info-value--price {
+  color: #ff2442;
+  font-weight: 600;
+}
+
+.info-value--highlight {
+  color: #ff2442;
+  font-weight: 500;
 }
 </style>

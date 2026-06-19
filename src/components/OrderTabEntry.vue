@@ -33,22 +33,37 @@
         <span class="tab-label">购买订单</span>
         <span v-if="purchaseCount > 0" class="tab-badge">{{ purchaseCount > 99 ? '99+' : purchaseCount }}</span>
       </div>
+      <div
+        class="tab-item"
+        :class="{ 'tab-item--active': modelValue === 'rental' }"
+        @click="handleTabClick('rental')"
+      >
+        <div class="tab-icon">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+        </div>
+        <span class="tab-label">租赁订单</span>
+        <span v-if="rentalCount > 0" class="tab-badge">{{ rentalCount > 99 ? '99+' : rentalCount }}</span>
+      </div>
     </div>
     <div class="tab-indicator">
       <div
         class="indicator-slider"
-        :class="{ 'indicator-slider--right': modelValue === 'purchase' }"
+        :style="sliderStyle"
       ></div>
     </div>
   </div>
 </template>
 
 <script setup>
+import { computed } from 'vue'
 const props = defineProps({
   modelValue: {
     type: String,
     default: 'service',
-    validator: (v) => ['service', 'purchase'].includes(v)
+    validator: (v) => ['service', 'purchase', 'rental'].includes(v)
   },
   serviceCount: {
     type: Number,
@@ -57,6 +72,18 @@ const props = defineProps({
   purchaseCount: {
     type: Number,
     default: 0
+  },
+  rentalCount: {
+    type: Number,
+    default: 0
+  }
+})
+
+const sliderStyle = computed(() => {
+  const index = ['service', 'purchase', 'rental'].indexOf(props.modelValue)
+  return {
+    width: '33.33%',
+    transform: `translateX(${index * 100}%)`
   }
 })
 

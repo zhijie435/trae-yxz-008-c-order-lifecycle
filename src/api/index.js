@@ -24,6 +24,10 @@ export function getPurchaseStatusCounts() {
   return request('/order/purchase/status-counts')
 }
 
+export function getRentalStatusCounts() {
+  return request('/order/rental/status-counts')
+}
+
 export function getServiceOrders(params = {}) {
   const query = new URLSearchParams(params).toString()
   return request('/order/service' + (query ? '?' + query : ''))
@@ -34,12 +38,21 @@ export function getPurchaseOrders(params = {}) {
   return request('/order/purchase' + (query ? '?' + query : ''))
 }
 
+export function getRentalOrders(params = {}) {
+  const query = new URLSearchParams(params).toString()
+  return request('/order/rental' + (query ? '?' + query : ''))
+}
+
 export function getServiceOrderDetail(orderId) {
   return request(`/order/service/${orderId}`)
 }
 
 export function getPurchaseOrderDetail(orderId) {
   return request(`/order/purchase/${orderId}`)
+}
+
+export function getRentalOrderDetail(orderId) {
+  return request(`/order/rental/${orderId}`)
 }
 
 export function updateOrderStatus(orderId, status) {
@@ -65,5 +78,24 @@ export function sendCsMessage(sessionId, message, orderContext) {
   return request(`/cs/chat/${sessionId}`, {
     method: 'POST',
     body: JSON.stringify({ message, orderContext })
+  })
+}
+
+export function applyRentalRenew(orderId, extendMonths) {
+  return request(`/order/rental/${orderId}/renew`, {
+    method: 'POST',
+    body: JSON.stringify({ extendMonths })
+  })
+}
+
+export function applyRentalReturn(orderId) {
+  return request(`/order/rental/${orderId}/return`, {
+    method: 'POST'
+  })
+}
+
+export function applyReRent(orderId) {
+  return request(`/order/rental/${orderId}/re-rent`, {
+    method: 'POST'
   })
 }

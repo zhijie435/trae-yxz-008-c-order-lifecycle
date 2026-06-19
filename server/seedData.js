@@ -45,6 +45,34 @@ export const PURCHASE_STATUS_FLOW = [
   PURCHASE_STATUS.COMPLETED
 ]
 
+export const RENTAL_STATUS = {
+  PENDING_SHIPMENT: 'pending_shipment',
+  PENDING_RECEIPT: 'pending_receipt',
+  RENTING: 'renting',
+  TO_REVIEW: 'to_review',
+  COMPLETED: 'completed',
+  RENEW_APPLIED: 'renew_applied',
+  RETURN_APPLIED: 'return_applied'
+}
+
+export const RENTAL_STATUS_LABELS = {
+  [RENTAL_STATUS.PENDING_SHIPMENT]: '待发货',
+  [RENTAL_STATUS.PENDING_RECEIPT]: '待收货',
+  [RENTAL_STATUS.RENTING]: '租赁中',
+  [RENTAL_STATUS.TO_REVIEW]: '待评价',
+  [RENTAL_STATUS.COMPLETED]: '已完成',
+  [RENTAL_STATUS.RENEW_APPLIED]: '续租审核中',
+  [RENTAL_STATUS.RETURN_APPLIED]: '退租审核中'
+}
+
+export const RENTAL_STATUS_FLOW = [
+  RENTAL_STATUS.PENDING_SHIPMENT,
+  RENTAL_STATUS.PENDING_RECEIPT,
+  RENTAL_STATUS.RENTING,
+  RENTAL_STATUS.TO_REVIEW,
+  RENTAL_STATUS.COMPLETED
+]
+
 const serviceOrders = [
   {
     orderId: 'SVC20240601001',
@@ -311,12 +339,208 @@ const purchaseOrders = [
   }
 ]
 
+const rentalOrders = [
+  {
+    orderId: 'RTL20240601001',
+    type: 'rental',
+    shopName: '租机侠官方旗舰店',
+    productTitle: 'iPhone 15 Pro Max',
+    productImage: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=iPhone%2015%20Pro%20Max%20natural%20titanium%20on%20white%20background%2C%20minimal%20product%20photo&image_size=square',
+    specText: '原色钛金属 / 256GB',
+    quantity: 1,
+    unitPrice: 12.5,
+    totalPrice: 375,
+    status: RENTAL_STATUS.RENTING,
+    createTime: '2026-05-20T10:00:00.000Z',
+    rentalInfo: {
+      leaseMonths: 12,
+      monthlyRent: 375,
+      deposit: 2000,
+      startDate: '2026-05-22',
+      endDate: '2027-05-21',
+      totalRent: 4500,
+      paidMonths: 1,
+      nextPayDate: '2026-06-22'
+    }
+  },
+  {
+    orderId: 'RTL20240601002',
+    type: 'rental',
+    shopName: '租机侠官方旗舰店',
+    productTitle: 'MacBook Pro 16英寸 M3 Max',
+    productImage: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=MacBook%20Pro%2016%20inch%20silver%20laptop%20on%20white%20desk%2C%20minimal%20product%20photo&image_size=square',
+    specText: '银色 / 48GB+1TB',
+    quantity: 1,
+    unitPrice: 35,
+    totalPrice: 1050,
+    status: RENTAL_STATUS.RENTING,
+    createTime: '2026-06-01T14:30:00.000Z',
+    rentalInfo: {
+      leaseMonths: 6,
+      monthlyRent: 1050,
+      deposit: 5000,
+      startDate: '2026-06-03',
+      endDate: '2026-12-02',
+      totalRent: 6300,
+      paidMonths: 0,
+      nextPayDate: '2026-06-22'
+    }
+  },
+  {
+    orderId: 'RTL20240601003',
+    type: 'rental',
+    shopName: '数码租赁专营店',
+    productTitle: 'Sony A7M4 微单相机',
+    productImage: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Sony%20A7M4%20mirrorless%20camera%20body%20on%20white%20background%2C%20minimal%20product%20photo&image_size=square',
+    specText: '黑色 / 单机身',
+    quantity: 1,
+    unitPrice: 26.67,
+    totalPrice: 800,
+    status: RENTAL_STATUS.RENTING,
+    createTime: '2026-06-15T09:00:00.000Z',
+    rentalInfo: {
+      leaseMonths: 3,
+      monthlyRent: 800,
+      deposit: 3000,
+      startDate: '2026-06-16',
+      endDate: '2026-09-15',
+      totalRent: 2400,
+      paidMonths: 0,
+      nextPayDate: '2026-06-22'
+    }
+  },
+  {
+    orderId: 'RTL20240602001',
+    type: 'rental',
+    shopName: '租机侠官方旗舰店',
+    productTitle: 'iPad Pro 12.9英寸 M4',
+    productImage: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=iPad%20Pro%2012.9%20inch%20silver%20tablet%20on%20white%20background%2C%20minimal%20product%20photo&image_size=square',
+    specText: '深空灰 / 256GB WiFi',
+    quantity: 1,
+    unitPrice: 16.67,
+    totalPrice: 500,
+    status: RENTAL_STATUS.PENDING_SHIPMENT,
+    createTime: '2026-06-18T16:00:00.000Z',
+    rentalInfo: {
+      leaseMonths: 6,
+      monthlyRent: 500,
+      deposit: 2500,
+      startDate: '',
+      endDate: '',
+      totalRent: 3000,
+      paidMonths: 0,
+      nextPayDate: ''
+    }
+  },
+  {
+    orderId: 'RTL20240602002',
+    type: 'rental',
+    shopName: '影像器材租赁',
+    productTitle: 'DJI Mavic 3 Pro 无人机',
+    productImage: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=DJI%20Mavic%203%20Pro%20drone%20flying%20on%20white%20background%2C%20minimal%20product%20photo&image_size=square',
+    specText: '畅飞套装 / 含遥控器',
+    quantity: 1,
+    unitPrice: 80,
+    totalPrice: 2400,
+    status: RENTAL_STATUS.PENDING_RECEIPT,
+    createTime: '2026-06-16T11:00:00.000Z',
+    rentalInfo: {
+      leaseMonths: 1,
+      monthlyRent: 2400,
+      deposit: 8000,
+      startDate: '2026-06-18',
+      endDate: '2026-07-17',
+      totalRent: 2400,
+      paidMonths: 0,
+      nextPayDate: ''
+    }
+  },
+  {
+    orderId: 'RTL20240603001',
+    type: 'rental',
+    shopName: '租机侠官方旗舰店',
+    productTitle: 'Apple Watch Ultra 2',
+    productImage: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Apple%20Watch%20Ultra%202%20titanium%20on%20white%20background%2C%20minimal%20product%20photo&image_size=square',
+    specText: '钛金属表壳 / 高山回环表带',
+    quantity: 1,
+    unitPrice: 9.9,
+    totalPrice: 297,
+    status: RENTAL_STATUS.TO_REVIEW,
+    createTime: '2026-03-20T10:00:00.000Z',
+    rentalInfo: {
+      leaseMonths: 3,
+      monthlyRent: 297,
+      deposit: 1500,
+      startDate: '2026-03-22',
+      endDate: '2026-06-21',
+      totalRent: 891,
+      paidMonths: 3,
+      nextPayDate: ''
+    }
+  },
+  {
+    orderId: 'RTL20240604001',
+    type: 'rental',
+    shopName: '数码租赁专营店',
+    productTitle: 'Nintendo Switch OLED',
+    productImage: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Nintendo%20Switch%20OLED%20white%20console%20on%20white%20background%2C%20minimal%20product%20photo&image_size=square',
+    specText: '白色版 / 含底座',
+    quantity: 1,
+    unitPrice: 6.67,
+    totalPrice: 200,
+    status: RENTAL_STATUS.COMPLETED,
+    createTime: '2026-01-15T14:00:00.000Z',
+    rentalInfo: {
+      leaseMonths: 3,
+      monthlyRent: 200,
+      deposit: 1000,
+      startDate: '2026-01-17',
+      endDate: '2026-04-16',
+      totalRent: 600,
+      paidMonths: 3,
+      nextPayDate: ''
+    }
+  },
+  {
+    orderId: 'RTL20240603002',
+    type: 'rental',
+    shopName: '影像器材租赁',
+    productTitle: 'Canon R5 微单相机',
+    productImage: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Canon%20R5%20mirrorless%20camera%20body%20black%20on%20white%20background%2C%20minimal%20product%20photo&image_size=square',
+    specText: '黑色 / RF24-70套装',
+    quantity: 1,
+    unitPrice: 100,
+    totalPrice: 3000,
+    status: RENTAL_STATUS.RENEW_APPLIED,
+    createTime: '2026-04-10T09:30:00.000Z',
+    rentalInfo: {
+      leaseMonths: 2,
+      monthlyRent: 3000,
+      deposit: 10000,
+      startDate: '2026-04-12',
+      endDate: '2026-06-11',
+      totalRent: 6000,
+      paidMonths: 2,
+      nextPayDate: '',
+      renewInfo: {
+        applyTime: '2026-06-10T10:00:00.000Z',
+        extendMonths: 1,
+        status: 'pending'
+      }
+    }
+  }
+]
+
 export function getServiceOrderCount() {
   return serviceOrders.filter(o => o.status !== SERVICE_STATUS.CANCELLED).length
 }
 
 export function getPurchaseOrderCount() {
   return purchaseOrders.length
+}
+
+export function getRentalOrderCount() {
+  return rentalOrders.length
 }
 
 export function getServiceStatusCounts() {
@@ -351,10 +575,27 @@ export function getPurchaseOrderList(status) {
   return purchaseOrders.filter(o => o.status === status)
 }
 
+export function getRentalStatusCounts() {
+  const counts = {}
+  Object.values(RENTAL_STATUS).forEach(s => { counts[s] = 0 })
+  rentalOrders.forEach(o => {
+    if (counts[o.status] !== undefined) {
+      counts[o.status]++
+    }
+  })
+  return counts
+}
+
+export function getRentalOrderList(status) {
+  if (!status || status === 'all') return rentalOrders
+  return rentalOrders.filter(o => o.status === status)
+}
+
 function generateStatusTimeline(order) {
   const isService = order.type === 'service'
-  const flow = isService ? SERVICE_STATUS_FLOW : PURCHASE_STATUS_FLOW
-  const labels = isService ? SERVICE_STATUS_LABELS : PURCHASE_STATUS_LABELS
+  const isRental = order.type === 'rental'
+  const flow = isRental ? RENTAL_STATUS_FLOW : (isService ? SERVICE_STATUS_FLOW : PURCHASE_STATUS_FLOW)
+  const labels = isRental ? RENTAL_STATUS_LABELS : (isService ? SERVICE_STATUS_LABELS : PURCHASE_STATUS_LABELS)
   const timeline = []
   const createTime = new Date(order.createTime).getTime()
   const addMinutes = (base, mins) => {
@@ -367,47 +608,80 @@ function generateStatusTimeline(order) {
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
   }
   let currentIndex = flow.indexOf(order.status)
-  if (currentIndex === -1 && order.status === SERVICE_STATUS.CANCELLED) {
-    timeline.push({
-      status: SERVICE_STATUS.CANCELLED,
-      label: labels[SERVICE_STATUS.CANCELLED] || '已取消',
-      time: formatTime(addMinutes(createTime, 30)),
-      isCurrent: true,
-      isCompleted: true,
-      description: '订单已取消'
-    })
-    return timeline
+  if (currentIndex === -1) {
+    if (order.status === SERVICE_STATUS.CANCELLED) {
+      timeline.push({
+        status: SERVICE_STATUS.CANCELLED,
+        label: labels[SERVICE_STATUS.CANCELLED] || '已取消',
+        time: formatTime(addMinutes(createTime, 30)),
+        isCurrent: true,
+        isCompleted: true,
+        description: '订单已取消'
+      })
+      return timeline
+    }
+    if (order.status === RENTAL_STATUS.RENEW_APPLIED || order.status === RENTAL_STATUS.RETURN_APPLIED) {
+      currentIndex = flow.indexOf(RENTAL_STATUS.RENTING)
+    }
   }
   flow.forEach((status, index) => {
     const isCompleted = index <= currentIndex
-    const isCurrent = index === currentIndex
+    const isCurrent = index === currentIndex && order.status !== RENTAL_STATUS.RENEW_APPLIED && order.status !== RENTAL_STATUS.RETURN_APPLIED
     let offsetMinutes = 0
-    if (status === (isService ? SERVICE_STATUS.PENDING : PURCHASE_STATUS.PENDING_SHIPMENT)) {
-      offsetMinutes = 0
-    } else if (status === (isService ? SERVICE_STATUS.PENDING_SERVICE : PURCHASE_STATUS.PENDING_RECEIPT)) {
-      offsetMinutes = 5
-    } else if (status === SERVICE_STATUS.IN_PROGRESS) {
-      offsetMinutes = 60
-    } else if (status === SERVICE_STATUS.TO_REVIEW) {
-      offsetMinutes = isService ? 240 : 120
-    } else if (status === SERVICE_STATUS.COMPLETED) {
-      offsetMinutes = isService ? 300 : 180
+    if (isRental) {
+      if (status === RENTAL_STATUS.PENDING_SHIPMENT) {
+        offsetMinutes = 0
+      } else if (status === RENTAL_STATUS.PENDING_RECEIPT) {
+        offsetMinutes = 5
+      } else if (status === RENTAL_STATUS.RENTING) {
+        offsetMinutes = 120
+      } else if (status === RENTAL_STATUS.TO_REVIEW) {
+        offsetMinutes = order.rentalInfo?.leaseMonths ? order.rentalInfo.leaseMonths * 30 * 24 * 60 : 3600
+      } else if (status === RENTAL_STATUS.COMPLETED) {
+        offsetMinutes = order.rentalInfo?.leaseMonths ? order.rentalInfo.leaseMonths * 30 * 24 * 60 + 60 : 3660
+      }
+    } else {
+      if (status === (isService ? SERVICE_STATUS.PENDING : PURCHASE_STATUS.PENDING_SHIPMENT)) {
+        offsetMinutes = 0
+      } else if (status === (isService ? SERVICE_STATUS.PENDING_SERVICE : PURCHASE_STATUS.PENDING_RECEIPT)) {
+        offsetMinutes = 5
+      } else if (status === SERVICE_STATUS.IN_PROGRESS) {
+        offsetMinutes = 60
+      } else if (status === SERVICE_STATUS.TO_REVIEW) {
+        offsetMinutes = isService ? 240 : 120
+      } else if (status === SERVICE_STATUS.COMPLETED) {
+        offsetMinutes = isService ? 300 : 180
+      }
     }
     let description = ''
-    if (status === SERVICE_STATUS.PENDING) {
-      description = '订单已提交，请尽快完成支付'
-    } else if (status === SERVICE_STATUS.PENDING_SERVICE) {
-      description = '支付成功，等待服务人员联系您'
-    } else if (status === SERVICE_STATUS.IN_PROGRESS) {
-      description = '服务人员已出发，正在前往服务地点'
-    } else if (status === PURCHASE_STATUS.PENDING_SHIPMENT) {
-      description = '商家已收到订单，正在准备发货'
-    } else if (status === PURCHASE_STATUS.PENDING_RECEIPT) {
-      description = '商品已发出，请注意查收'
-    } else if (status === SERVICE_STATUS.TO_REVIEW) {
-      description = isService ? '服务已完成，期待您的评价' : '已确认收货，期待您的评价'
-    } else if (status === SERVICE_STATUS.COMPLETED) {
-      description = '交易已完成，感谢您的支持'
+    if (isRental) {
+      if (status === RENTAL_STATUS.PENDING_SHIPMENT) {
+        description = '商家已收到订单，正在准备发货'
+      } else if (status === RENTAL_STATUS.PENDING_RECEIPT) {
+        description = '商品已发出，请注意查收'
+      } else if (status === RENTAL_STATUS.RENTING) {
+        description = '已确认收货，租赁期开始'
+      } else if (status === RENTAL_STATUS.TO_REVIEW) {
+        description = '租期已结束，期待您的评价'
+      } else if (status === RENTAL_STATUS.COMPLETED) {
+        description = '租赁已完成，感谢您的支持'
+      }
+    } else {
+      if (status === SERVICE_STATUS.PENDING) {
+        description = '订单已提交，请尽快完成支付'
+      } else if (status === SERVICE_STATUS.PENDING_SERVICE) {
+        description = '支付成功，等待服务人员联系您'
+      } else if (status === SERVICE_STATUS.IN_PROGRESS) {
+        description = '服务人员已出发，正在前往服务地点'
+      } else if (status === PURCHASE_STATUS.PENDING_SHIPMENT) {
+        description = '商家已收到订单，正在准备发货'
+      } else if (status === PURCHASE_STATUS.PENDING_RECEIPT) {
+        description = '商品已发出，请注意查收'
+      } else if (status === SERVICE_STATUS.TO_REVIEW) {
+        description = isService ? '服务已完成，期待您的评价' : '已确认收货，期待您的评价'
+      } else if (status === SERVICE_STATUS.COMPLETED) {
+        description = '交易已完成，感谢您的支持'
+      }
     }
     timeline.push({
       status,
@@ -418,15 +692,37 @@ function generateStatusTimeline(order) {
       description
     })
   })
+  if (order.status === RENTAL_STATUS.RENEW_APPLIED) {
+    timeline.push({
+      status: RENTAL_STATUS.RENEW_APPLIED,
+      label: RENTAL_STATUS_LABELS[RENTAL_STATUS.RENEW_APPLIED],
+      time: formatTime(order.rentalInfo?.renewInfo?.applyTime || new Date().toISOString()),
+      isCurrent: true,
+      isCompleted: true,
+      description: `续租申请已提交，续租${order.rentalInfo?.renewInfo?.extendMonths || 1}个月，等待审核`
+    })
+  }
+  if (order.status === RENTAL_STATUS.RETURN_APPLIED) {
+    timeline.push({
+      status: RENTAL_STATUS.RETURN_APPLIED,
+      label: RENTAL_STATUS_LABELS[RENTAL_STATUS.RETURN_APPLIED],
+      time: formatTime(new Date().toISOString()),
+      isCurrent: true,
+      isCompleted: true,
+      description: '退租申请已提交，等待审核'
+    })
+  }
   return timeline
 }
 
 function buildOrderDetail(order) {
   const isService = order.type === 'service'
+  const isRental = order.type === 'rental'
   const timeline = generateStatusTimeline(order)
+  const statusLabels = isRental ? RENTAL_STATUS_LABELS : (isService ? SERVICE_STATUS_LABELS : PURCHASE_STATUS_LABELS)
   const detail = {
     ...order,
-    statusText: isService ? SERVICE_STATUS_LABELS[order.status] : PURCHASE_STATUS_LABELS[order.status],
+    statusText: statusLabels[order.status] || order.status,
     timeline,
     receiver: {
       name: '张三',
@@ -441,7 +737,27 @@ function buildOrderDetail(order) {
       transactionId: order.status === 'pending' ? '' : `TXN${order.orderId}`
     }
   }
-  if (!isService) {
+  if (isRental) {
+    detail.logistics = {
+      company: '顺丰速运',
+      trackingNo: order.status === 'pending_shipment' ? '' : `SF${order.orderId}`,
+      estimatedTime: '2026-06-21 18:00前'
+    }
+    if (order.status !== 'pending_shipment') {
+      detail.logistics.tracking = [
+        {
+          time: timeline.find(t => t.status === 'pending_receipt')?.time || '',
+          status: '运输中',
+          description: '快件已到达【北京朝阳集散中心】，正在派送中'
+        },
+        {
+          time: timeline.find(t => t.status === 'pending_shipment')?.time || '',
+          status: '已发货',
+          description: '商家已发货，快件已揽收'
+        }
+      ]
+    }
+  } else if (!isService) {
     detail.logistics = {
       company: '顺丰速运',
       trackingNo: order.status === 'pending_shipment' ? '' : `SF${Date.now()}`,
@@ -482,14 +798,57 @@ export function getPurchaseOrderDetail(orderId) {
   return order ? buildOrderDetail(order) : null
 }
 
+export function getRentalOrderDetail(orderId) {
+  const order = rentalOrders.find(o => o.orderId === orderId)
+  return order ? buildOrderDetail(order) : null
+}
+
 export function updateOrderStatus(orderId, newStatus) {
-  const allOrders = [...serviceOrders, ...purchaseOrders]
+  const allOrders = [...serviceOrders, ...purchaseOrders, ...rentalOrders]
   const order = allOrders.find(o => o.orderId === orderId)
   if (order) {
     order.status = newStatus
     return true
   }
   return false
+}
+
+export function applyRenew(orderId, extendMonths) {
+  const order = rentalOrders.find(o => o.orderId === orderId)
+  if (order && order.status === RENTAL_STATUS.RENTING) {
+    order.status = RENTAL_STATUS.RENEW_APPLIED
+    order.rentalInfo = order.rentalInfo || {}
+    order.rentalInfo.renewInfo = {
+      applyTime: new Date().toISOString(),
+      extendMonths: extendMonths || 1,
+      status: 'pending'
+    }
+    return true
+  }
+  return false
+}
+
+export function applyReturn(orderId) {
+  const order = rentalOrders.find(o => o.orderId === orderId)
+  if (order && order.status === RENTAL_STATUS.RENTING) {
+    order.status = RENTAL_STATUS.RETURN_APPLIED
+    return true
+  }
+  return false
+}
+
+export function reRent(orderId) {
+  const order = rentalOrders.find(o => o.orderId === orderId)
+  if (order) {
+    return {
+      productTitle: order.productTitle,
+      productImage: order.productImage,
+      specText: order.specText,
+      shopName: order.shopName,
+      monthlyRent: order.rentalInfo?.monthlyRent || order.unitPrice
+    }
+  }
+  return null
 }
 
 const PRE_SALE_FAQS = [
