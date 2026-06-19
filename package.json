@@ -9,13 +9,19 @@
     "preview": "vite preview",
     "dev:server": "cd server && npm start",
     "dev:all": "npm run dev:server & npm run dev",
-    "install:all": "npm install && cd server && npm install"
+    "install:all": "npm install && cd server && npm install",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "vue": "^3.4.21"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.0.4",
-    "vite": "^5.2.0"
+    "@vue/test-utils": "^2.4.11",
+    "happy-dom": "^20.10.6",
+    "jsdom": "^29.1.1",
+    "vite": "^5.2.0",
+    "vitest": "^4.1.9"
   }
 }
