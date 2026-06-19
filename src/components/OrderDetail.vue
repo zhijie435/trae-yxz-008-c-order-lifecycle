@@ -8,7 +8,12 @@
           </svg>
         </button>
         <h1 class="page-title">订单详情</h1>
-        <div class="header-placeholder"></div>
+        <button class="cs-btn" @click="showCsPanel = true">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+          </svg>
+          <span class="cs-btn__dot"></span>
+        </button>
       </div>
     </header>
 
@@ -285,6 +290,12 @@
     </div>
 
     <div v-if="showToast" class="toast">{{ toastMessage }}</div>
+
+    <CsServicePanel
+      v-model:visible="showCsPanel"
+      :order="order"
+      :default-type="order?.status === 'pending' ? 'pre' : 'after'"
+    />
   </div>
 </template>
 
@@ -295,6 +306,7 @@ import {
   getPurchaseOrderDetail,
   updateOrderStatus
 } from '../api'
+import CsServicePanel from './CsServicePanel.vue'
 
 const props = defineProps({
   orderId: {
@@ -315,6 +327,7 @@ const error = ref('')
 const order = ref(null)
 const showToast = ref(false)
 const toastMessage = ref('')
+const showCsPanel = ref(false)
 
 const STATUS_TEXT = {
   pending: '待付款',
@@ -432,13 +445,11 @@ const handleRebookOrder = () => {
 }
 
 const handleContactService = () => {
-  showToastMessage('正在连接客服...')
+  showCsPanel.value = true
 }
 
 const handleContactServicePerson = () => {
-  if (order.value?.serviceInfo?.servicePhone) {
-    showToastMessage(`正在拨打 ${order.value.serviceInfo.servicePhone}`)
-  }
+  showCsPanel.value = true
 }
 
 const handleViewLogistics = () => {
@@ -498,8 +509,33 @@ onMounted(() => {
   color: #333;
 }
 
-.header-placeholder {
+.cs-btn {
   width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: #333;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+  position: relative;
+}
+
+.cs-btn:hover {
+  background: #f5f5f5;
+}
+
+.cs-btn__dot {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ff2442;
 }
 
 .loading-state,

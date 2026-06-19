@@ -491,3 +491,200 @@ export function updateOrderStatus(orderId, newStatus) {
   }
   return false
 }
+
+const PRE_SALE_FAQS = [
+  {
+    id: 'pre1',
+    category: '商品咨询',
+    question: '商品是正品吗？',
+    answer: '您好，我们店铺所有商品均为官方授权正品，支持官方验货，假一赔十，请放心购买。'
+  },
+  {
+    id: 'pre2',
+    category: '商品咨询',
+    question: '有现货吗？什么时候发货？',
+    answer: '您好，页面显示的商品均有现货。付款成功后24小时内安排发货，节假日顺延。'
+  },
+  {
+    id: 'pre3',
+    category: '价格优惠',
+    question: '现在有什么优惠活动吗？',
+    answer: '您好，目前店铺有满减活动：满299减30，满599减80，满999减150。另外新用户首单立减20元~'
+  },
+  {
+    id: 'pre4',
+    category: '价格优惠',
+    question: '可以使用优惠券吗？',
+    answer: '您好，订单结算时可以选择使用优惠券哦。优惠券可在"我的-优惠券"中查看和领取。'
+  },
+  {
+    id: 'pre5',
+    category: '配送相关',
+    question: '发什么快递？支持货到付款吗？',
+    answer: '您好，默认发顺丰快递，偏远地区发EMS。目前暂不支持货到付款，请谅解。'
+  },
+  {
+    id: 'pre6',
+    category: '配送相关',
+    question: '可以指定配送时间吗？',
+    answer: '您好，暂时无法精确指定配送时间。您可以在备注中说明偏好，快递员会尽量配合。'
+  }
+]
+
+const AFTER_SALE_FAQS = [
+  {
+    id: 'after1',
+    category: '物流查询',
+    question: '物流一直不更新怎么办？',
+    answer: '您好，物流信息可能会有延迟。如果超过48小时未更新，请联系我们为您催促快递或核实包裹状态。'
+  },
+  {
+    id: 'after2',
+    category: '物流查询',
+    question: '可以修改收货地址吗？',
+    answer: '您好，商品未发货前可以修改地址。如果已经发货，请联系我们尝试拦截或转寄。'
+  },
+  {
+    id: 'after3',
+    category: '退换货',
+    question: '支持七天无理由退换吗？',
+    answer: '您好，本店商品支持七天无理由退换货（特殊商品除外），商品需保持完好不影响二次销售。'
+  },
+  {
+    id: 'after4',
+    category: '退换货',
+    question: '退换货流程是怎样的？',
+    answer: '您好，退换货流程：1. 申请退换货；2. 商家审核通过；3. 寄回商品；4. 商家确认收货；5. 退款/换货发出。'
+  },
+  {
+    id: 'after5',
+    category: '退款问题',
+    question: '退款多久能到账？',
+    answer: '您好，退款审核通过后，原路退回您的支付账户。微信/支付宝1-3个工作日，银行卡3-7个工作日。'
+  },
+  {
+    id: 'after6',
+    category: '售后保障',
+    question: '保修期是多久？',
+    answer: '您好，商品按国家规定执行三包政策，整机保修1年，主要部件保修2-3年（视商品类型而定）。'
+  },
+  {
+    id: 'after7',
+    category: '售后服务',
+    question: '如何申请售后？',
+    answer: '您好，您可以在订单详情页点击"申请售后"按钮，选择售后类型（退货/换货/维修）并上传凭证即可。'
+  }
+]
+
+const SERVICE_FAQS = [
+  {
+    id: 'svc1',
+    category: '服务预约',
+    question: '可以改约服务时间吗？',
+    answer: '您好，服务开始前24小时可以免费改约一次。请在订单详情页点击"改约"按钮或联系客服协助。'
+  },
+  {
+    id: 'svc2',
+    category: '服务预约',
+    question: '服务人员多久能上门？',
+    answer: '您好，一般情况下服务人员会在预约时间前后15分钟内到达。如有特殊情况会提前电话联系您。'
+  },
+  {
+    id: 'svc3',
+    category: '服务质量',
+    question: '服务不满意怎么办？',
+    answer: '您好，如果对服务不满意，可以申请退款或免费重做。请在服务完成后24小时内联系我们反馈。'
+  },
+  {
+    id: 'svc4',
+    category: '服务质量',
+    question: '服务有保修期吗？',
+    answer: '您好，我们的服务均有质保期。维修服务质保90天，安装/清洗服务质保30天。质保期内有问题免费上门。'
+  },
+  {
+    id: 'svc5',
+    category: '退款问题',
+    question: '怎么取消服务并退款？',
+    answer: '您好，服务未开始前可全额退款；服务已开始但未完成的，按实际进度结算后退还余款。'
+  },
+  {
+    id: 'svc6',
+    category: '费用问题',
+    question: '会有额外收费吗？',
+    answer: '您好，页面显示价格即为服务费用。如需额外材料或增值服务，服务人员会提前告知并征得您的同意。'
+  }
+]
+
+const chatMessages = {}
+
+function getFaqsByType(type, orderType) {
+  if (orderType === 'service') {
+    return type === 'pre' ? PRE_SALE_FAQS.slice(0, 3) : SERVICE_FAQS
+  }
+  return type === 'pre' ? PRE_SALE_FAQS : AFTER_SALE_FAQS
+}
+
+function getAutoReply(question, orderType) {
+  const allFaqs = [...PRE_SALE_FAQS, ...AFTER_SALE_FAQS, ...SERVICE_FAQS]
+  const matched = allFaqs.find(f => question.includes(f.question.slice(0, 4)))
+  if (matched) {
+    return matched.answer
+  }
+  const replies = [
+    '好的，已收到您的问题，客服小妹正在为您查询~',
+    '您好，关于您的问题，建议您先查看订单详情哦~',
+    '非常抱歉给您带来不便，我们会尽快为您处理！',
+    '感谢您的咨询，请稍等，正在为您转接人工客服...',
+    '这个问题小助手帮您记录下来了，稍后会有专人回复您~'
+  ]
+  return replies[Math.floor(Math.random() * replies.length)]
+}
+
+export function getCsFaqs(consultType, orderType) {
+  return getFaqsByType(consultType, orderType)
+}
+
+export function getChatHistory(sessionId) {
+  return chatMessages[sessionId] || []
+}
+
+export function sendMessage(sessionId, message, orderContext) {
+  const now = new Date().toISOString()
+  if (!chatMessages[sessionId]) {
+    chatMessages[sessionId] = []
+    if (orderContext) {
+      chatMessages[sessionId].push({
+        id: Date.now() + '_sys',
+        type: 'system',
+        content: `订单信息：${orderContext.productTitle} (订单号：${orderContext.orderId})`,
+        time: now
+      })
+    }
+    chatMessages[sessionId].push({
+      id: Date.now() + '_welcome',
+      type: 'service',
+      content: '您好，很高兴为您服务！请问有什么可以帮您的？',
+      time: now
+    })
+  }
+  chatMessages[sessionId].push({
+    id: Date.now() + '_user',
+    type: 'user',
+    content: message,
+    time: now
+  })
+  const replyTime = new Date(Date.now() + 1000).toISOString()
+  const reply = getAutoReply(message, orderContext?.type || 'purchase')
+  setTimeout(() => {
+    chatMessages[sessionId].push({
+      id: Date.now() + '_svc',
+      type: 'service',
+      content: reply,
+      time: replyTime
+    })
+  }, 500)
+  return {
+    userMessage: chatMessages[sessionId][chatMessages[sessionId].length - 1],
+    autoReply: reply
+  }
+}

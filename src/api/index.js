@@ -48,3 +48,22 @@ export function updateOrderStatus(orderId, status) {
     body: JSON.stringify({ status })
   })
 }
+
+export function getCsFaqs(type, orderType) {
+  const params = {}
+  if (type) params.type = type
+  if (orderType) params.orderType = orderType
+  const query = new URLSearchParams(params).toString()
+  return request('/cs/faqs' + (query ? '?' + query : ''))
+}
+
+export function getChatHistory(sessionId) {
+  return request(`/cs/chat/${sessionId}`)
+}
+
+export function sendCsMessage(sessionId, message, orderContext) {
+  return request(`/cs/chat/${sessionId}`, {
+    method: 'POST',
+    body: JSON.stringify({ message, orderContext })
+  })
+}

@@ -10,6 +10,9 @@ import {
   getServiceOrderDetail,
   getPurchaseOrderDetail,
   updateOrderStatus,
+  getCsFaqs,
+  getChatHistory,
+  sendMessage,
   SERVICE_STATUS_LABELS,
   PURCHASE_STATUS_LABELS
 } from './seedData.js'
@@ -137,6 +140,43 @@ app.post('/api/order/:orderId/status', (req, res) => {
   res.json({
     code: 0,
     message: 'success'
+  })
+})
+
+app.get('/api/cs/faqs', (req, res) => {
+  const { type = 'after', orderType = 'purchase' } = req.query
+  const faqs = getCsFaqs(type, orderType)
+  res.json({
+    code: 0,
+    message: 'success',
+    data: faqs
+  })
+})
+
+app.get('/api/cs/chat/:sessionId', (req, res) => {
+  const { sessionId } = req.params
+  const history = getChatHistory(sessionId)
+  res.json({
+    code: 0,
+    message: 'success',
+    data: { list: history }
+  })
+})
+
+app.post('/api/cs/chat/:sessionId', (req, res) => {
+  const { sessionId } = req.params
+  const { message, orderContext } = req.body
+  if (!message || message.trim() === '') {
+    return res.status(400).json({
+      code: 1,
+      message: '消息内容不能为空'
+    })
+  }
+  const result = sendMessage(sessionId, message, orderContext)
+  res.json({
+    code: 0,
+    message: 'success',
+    data: result
   })
 })
 

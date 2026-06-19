@@ -160,6 +160,19 @@
     </div>
 
     <div v-if="showToast" class="toast">{{ toastMessage }}</div>
+
+    <button v-if="currentPage === 'list'" class="float-cs-btn" @click="openCsPanel(null)">
+      <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+      </svg>
+      <span class="float-cs-btn__label">客服</span>
+    </button>
+
+    <CsServicePanel
+      v-model:visible="showCsPanel"
+      :order="csOrder"
+      :default-type="csDefaultType"
+    />
   </div>
 </template>
 
@@ -168,6 +181,7 @@ import { ref, computed, onMounted } from 'vue'
 import OrderTabEntry from './components/OrderTabEntry.vue'
 import StatusFilter from './components/StatusFilter.vue'
 import OrderDetail from './components/OrderDetail.vue'
+import CsServicePanel from './components/CsServicePanel.vue'
 import {
   getOrderSummary,
   getServiceStatusCounts,
@@ -229,6 +243,9 @@ const selectedOrderId = ref('')
 const selectedOrderType = ref('')
 const showToast = ref(false)
 const toastMessage = ref('')
+const showCsPanel = ref(false)
+const csOrder = ref(null)
+const csDefaultType = ref('after')
 
 const activeTab = ref('service')
 const activeServiceStatus = ref('all')
@@ -415,6 +432,16 @@ const onConfirmReceive = async (order) => {
 
 const onViewLogistics = (order) => {
   goToDetail(order)
+}
+
+const openCsPanel = (order) => {
+  csOrder.value = order
+  if (order) {
+    csDefaultType.value = order.status === 'pending' ? 'pre' : 'after'
+  } else {
+    csDefaultType.value = activeTab.value === 'service' ? 'after' : 'after'
+  }
+  showCsPanel.value = true
 }
 
 onMounted(async () => {
@@ -709,5 +736,37 @@ onMounted(async () => {
     opacity: 1;
     transform: translate(-50%, -50%) scale(1);
   }
+}
+
+.float-cs-btn {
+  position: fixed;
+  right: 16px;
+  bottom: 32px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ff2442 0%, #ff6b6b 100%);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  box-shadow: 0 4px 16px rgba(255, 36, 66, 0.4);
+  z-index: 99;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.float-cs-btn:active {
+  transform: scale(0.95);
+  box-shadow: 0 2px 8px rgba(255, 36, 66, 0.3);
+}
+
+.float-cs-btn__label {
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1;
 }
 </style>
