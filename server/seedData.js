@@ -350,3 +350,144 @@ export function getPurchaseOrderList(status) {
   if (!status || status === 'all') return purchaseOrders
   return purchaseOrders.filter(o => o.status === status)
 }
+
+function generateStatusTimeline(order) {
+  const isService = order.type === 'service'
+  const flow = isService ? SERVICE_STATUS_FLOW : PURCHASE_STATUS_FLOW
+  const labels = isService ? SERVICE_STATUS_LABELS : PURCHASE_STATUS_LABELS
+  const timeline = []
+  const createTime = new Date(order.createTime).getTime()
+  const addMinutes = (base, mins) => {
+    const d = new Date(base + mins * 60 * 1000)
+    return d.toISOString()
+  }
+  const formatTime = (isoStr) => {
+    const d = new Date(isoStr)
+    const pad = (n) => String(n).padStart(2, '0')
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+  }
+  let currentIndex = flow.indexOf(order.status)
+  if (currentIndex === -1 && order.status === SERVICE_STATUS.CANCELLED) {
+    timeline.push({
+      status: SERVICE_STATUS.CANCELLED,
+      label: labels[SERVICE_STATUS.CANCELLED] || '已取消',
+      time: formatTime(addMinutes(createTime, 30)),
+      isCurrent: true,
+      isCompleted: true,
+      description: '订单已取消'
+    })
+    return timeline
+  }
+  flow.forEach((status, index) => {
+    const isCompleted = index <= currentIndex
+    const isCurrent = index === currentIndex
+    let offsetMinutes = 0
+    if (status === (isService ? SERVICE_STATUS.PENDING : PURCHASE_STATUS.PENDING_SHIPMENT)) {
+      offsetMinutes = 0
+    } else if (status === (isService ? SERVICE_STATUS.PENDING_SERVICE : PURCHASE_STATUS.PENDING_RECEIPT)) {
+      offsetMinutes = 5
+    } else if (status === SERVICE_STATUS.IN_PROGRESS) {
+      offsetMinutes = 60
+    } else if (status === SERVICE_STATUS.TO_REVIEW) {
+      offsetMinutes = isService ? 240 : 120
+    } else if (status === SERVICE_STATUS.COMPLETED) {
+      offsetMinutes = isService ? 300 : 180
+    }
+    let description = ''
+    if (status === SERVICE_STATUS.PENDING) {
+      description = '订单已提交，请尽快完成支付'
+    } else if (status === SERVICE_STATUS.PENDING_SERVICE) {
+      description = '支付成功，等待服务人员联系您'
+    } else if (status === SERVICE_STATUS.IN_PROGRESS) {
+      description = '服务人员已出发，正在前往服务地点'
+    } else if (status === PURCHASE_STATUS.PENDING_SHIPMENT) {
+      description = '商家已收到订单，正在准备发货'
+    } else if (status === PURCHASE_STATUS.PENDING_RECEIPT) {
+      description = '商品已发出，请注意查收'
+    } else if (status === SERVICE_STATUS.TO_REVIEW) {
+      description = isService ? '服务已完成，期待您的评价' : '已确认收货，期待您的评价'
+    } else if (status === SERVICE_STATUS.COMPLETED) {
+      description = '交易已完成，感谢您的支持'
+    }
+    timeline.push({
+      status,
+      label: labels[status],
+      time: formatTime(addMinutes(createTime, offsetMinutes)),
+      isCurrent,
+      isCompleted,
+      description
+    })
+  })
+  return timeline
+}
+
+function buildOrderDetail(order) {
+  const isService = order.type === 'service'
+  const timeline = generateStatusTimeline(order)
+  const detail = {
+    ...order,
+    statusText: isService ? SERVICE_STATUS_LABELS[order.status] : PURCHASE_STATUS_LABELS[order.status],
+    timeline,
+    receiver: {
+      name: '张三',
+      phone: '138****8888',
+      address: isService
+        ? '北京市朝阳区建国路88号SOHO现代城A座1201室'
+        : '北京市海淀区中关村大街1号科技大厦B座2001室'
+    },
+    payInfo: {
+      payMethod: order.status === 'pending' ? '' : '微信支付',
+      payTime: order.status === 'pending' ? '' : timeline[1]?.time || '',
+      transactionId: order.status === 'pending' ? '' : `TXN${order.orderId}`
+    }
+  }
+  if (!isService) {
+    detail.logistics = {
+      company: '顺丰速运',
+      trackingNo: order.status === 'pending_shipment' ? '' : `SF${Date.now()}`,
+      estimatedTime: '2026-06-21 18:00前'
+    }
+    if (order.status !== 'pending_shipment') {
+      detail.logistics.tracking = [
+        {
+          time: timeline.find(t => t.status === 'pending_receipt')?.time || '',
+          status: '运输中',
+          description: '快件已到达【北京朝阳集散中心】，正在派送中'
+        },
+        {
+          time: timeline.find(t => t.status === 'pending_shipment')?.time || '',
+          status: '已发货',
+          description: '商家已发货，快件已揽收'
+        }
+      ]
+    }
+  } else {
+    detail.serviceInfo = {
+      serviceTime: '2026-06-20 14:00-16:00',
+      servicePerson: '李师傅',
+      servicePhone: '139****9999',
+      serviceRemark: '请提前准备好设备'
+    }
+  }
+  return detail
+}
+
+export function getServiceOrderDetail(orderId) {
+  const order = serviceOrders.find(o => o.orderId === orderId)
+  return order ? buildOrderDetail(order) : null
+}
+
+export function getPurchaseOrderDetail(orderId) {
+  const order = purchaseOrders.find(o => o.orderId === orderId)
+  return order ? buildOrderDetail(order) : null
+}
+
+export function updateOrderStatus(orderId, newStatus) {
+  const allOrders = [...serviceOrders, ...purchaseOrders]
+  const order = allOrders.find(o => o.orderId === orderId)
+  if (order) {
+    order.status = newStatus
+    return true
+  }
+  return false
+}

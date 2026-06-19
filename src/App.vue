@@ -1,16 +1,25 @@
 <template>
-  <div class="order-page">
-    <header class="page-header">
-      <div class="header-inner">
-        <button class="back-btn">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="15 18 9 12 15 6"></polyline>
-          </svg>
-        </button>
-        <h1 class="page-title">我的订单</h1>
-        <div class="header-placeholder"></div>
-      </div>
-    </header>
+  <div class="app">
+    <OrderDetail
+      v-if="currentPage === 'detail'"
+      :order-id="selectedOrderId"
+      :order-type="selectedOrderType"
+      @back="goBack"
+      @order-updated="onOrderUpdated"
+    />
+
+    <div v-else class="order-page">
+      <header class="page-header">
+        <div class="header-inner">
+          <button class="back-btn">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+          </button>
+          <h1 class="page-title">我的订单</h1>
+          <div class="header-placeholder"></div>
+        </div>
+      </header>
 
     <OrderTabEntry
       v-model="activeTab"
@@ -148,6 +157,9 @@
         </div>
       </div>
     </div>
+    </div>
+
+    <div v-if="showToast" class="toast">{{ toastMessage }}</div>
   </div>
 </template>
 
@@ -155,12 +167,14 @@
 import { ref, computed, onMounted } from 'vue'
 import OrderTabEntry from './components/OrderTabEntry.vue'
 import StatusFilter from './components/StatusFilter.vue'
+import OrderDetail from './components/OrderDetail.vue'
 import {
   getOrderSummary,
   getServiceStatusCounts,
   getPurchaseStatusCounts,
   getServiceOrders,
-  getPurchaseOrders
+  getPurchaseOrders,
+  updateOrderStatus
 } from './api'
 
 const SERVICE_TABS = [
@@ -209,6 +223,12 @@ const PURCHASE_EMPTY_TEXT = {
   to_review: '暂无待评价订单',
   completed: '暂无已完成订单'
 }
+
+const currentPage = ref('list')
+const selectedOrderId = ref('')
+const selectedOrderType = ref('')
+const showToast = ref(false)
+const toastMessage = ref('')
 
 const activeTab = ref('service')
 const activeServiceStatus = ref('all')
@@ -313,36 +333,88 @@ const onStatusChange = () => {
   fetchOrders()
 }
 
+const showToastMessage = (message) => {
+  toastMessage.value = message
+  showToast.value = true
+  setTimeout(() => {
+    showToast.value = false
+  }, 2000)
+}
+
+const goToDetail = (order) => {
+  selectedOrderId.value = order.orderId
+  selectedOrderType.value = order.type
+  currentPage.value = 'detail'
+}
+
+const goBack = () => {
+  currentPage.value = 'list'
+}
+
+const onOrderUpdated = async () => {
+  await Promise.all([
+    fetchSummary(),
+    fetchServiceStatusCounts(),
+    fetchPurchaseStatusCounts(),
+    fetchOrders()
+  ])
+}
+
 const onOrderClick = (order) => {
-  console.log('点击订单:', order.orderId)
+  goToDetail(order)
 }
 
-const onPayOrder = (order) => {
-  console.log('支付订单:', order.orderId)
+const onPayOrder = async (order) => {
+  try {
+    const nextStatus = order.type === 'service' ? 'pending_service' : 'pending_shipment'
+    await updateOrderStatus(order.orderId, nextStatus)
+    showToastMessage('支付成功')
+    await onOrderUpdated()
+  } catch (e) {
+    showToastMessage(e.message || '支付失败')
+  }
 }
 
-const onCancelOrder = (order) => {
-  console.log('取消订单:', order.orderId)
+const onCancelOrder = async (order) => {
+  try {
+    await updateOrderStatus(order.orderId, 'cancelled')
+    showToastMessage('订单已取消')
+    await onOrderUpdated()
+  } catch (e) {
+    showToastMessage(e.message || '取消失败')
+  }
 }
 
 const onViewDetail = (order) => {
-  console.log('查看详情:', order.orderId)
+  goToDetail(order)
 }
 
-const onReviewOrder = (order) => {
-  console.log('评价订单:', order.orderId)
+const onReviewOrder = async (order) => {
+  try {
+    await updateOrderStatus(order.orderId, 'completed')
+    showToastMessage('评价成功')
+    await onOrderUpdated()
+  } catch (e) {
+    showToastMessage(e.message || '操作失败')
+  }
 }
 
 const onRebookOrder = (order) => {
-  console.log('重新下单:', order.orderId)
+  showToastMessage('已加入购物车')
 }
 
-const onConfirmReceive = (order) => {
-  console.log('确认收货:', order.orderId)
+const onConfirmReceive = async (order) => {
+  try {
+    await updateOrderStatus(order.orderId, 'to_review')
+    showToastMessage('确认收货成功')
+    await onOrderUpdated()
+  } catch (e) {
+    showToastMessage(e.message || '操作失败')
+  }
 }
 
 const onViewLogistics = (order) => {
-  console.log('查看物流:', order.orderId)
+  goToDetail(order)
 }
 
 onMounted(async () => {
@@ -612,5 +684,30 @@ onMounted(async () => {
   background: #fff;
   color: #666;
   border: 1px solid #ddd;
+}
+
+.toast {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  z-index: 1000;
+  animation: toast-in 0.2s ease;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
 }
 </style>

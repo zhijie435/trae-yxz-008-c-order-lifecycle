@@ -7,6 +7,9 @@ import {
   getPurchaseStatusCounts,
   getServiceOrderList,
   getPurchaseOrderList,
+  getServiceOrderDetail,
+  getPurchaseOrderDetail,
+  updateOrderStatus,
   SERVICE_STATUS_LABELS,
   PURCHASE_STATUS_LABELS
 } from './seedData.js'
@@ -80,6 +83,60 @@ app.get('/api/order/purchase', (req, res) => {
     code: 0,
     message: 'success',
     data: { list }
+  })
+})
+
+app.get('/api/order/service/:orderId', (req, res) => {
+  const { orderId } = req.params
+  const detail = getServiceOrderDetail(orderId)
+  if (!detail) {
+    return res.status(404).json({
+      code: 1,
+      message: '订单不存在'
+    })
+  }
+  res.json({
+    code: 0,
+    message: 'success',
+    data: detail
+  })
+})
+
+app.get('/api/order/purchase/:orderId', (req, res) => {
+  const { orderId } = req.params
+  const detail = getPurchaseOrderDetail(orderId)
+  if (!detail) {
+    return res.status(404).json({
+      code: 1,
+      message: '订单不存在'
+    })
+  }
+  res.json({
+    code: 0,
+    message: 'success',
+    data: detail
+  })
+})
+
+app.post('/api/order/:orderId/status', (req, res) => {
+  const { orderId } = req.params
+  const { status } = req.body
+  if (!status) {
+    return res.status(400).json({
+      code: 1,
+      message: '缺少状态参数'
+    })
+  }
+  const success = updateOrderStatus(orderId, status)
+  if (!success) {
+    return res.status(404).json({
+      code: 1,
+      message: '订单不存在'
+    })
+  }
+  res.json({
+    code: 0,
+    message: 'success'
   })
 })
 

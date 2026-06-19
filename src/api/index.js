@@ -33,3 +33,18 @@ export function getPurchaseOrders(params = {}) {
   const query = new URLSearchParams(params).toString()
   return request('/order/purchase' + (query ? '?' + query : ''))
 }
+
+export function getServiceOrderDetail(orderId) {
+  return request(`/order/service/${orderId}`)
+}
+
+export function getPurchaseOrderDetail(orderId) {
+  return request(`/order/purchase/${orderId}`)
+}
+
+export function updateOrderStatus(orderId, status) {
+  return request(`/order/${orderId}/status`, {
+    method: 'POST',
+    body: JSON.stringify({ status })
+  })
+}
